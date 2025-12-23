@@ -3,101 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cockpit Projets - État</title>
+    <title>Project Cockpit</title>
    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    
     <style>
-        /* --- 1. DESIGN SYSTEM DE L'ÉTAT (Inspiration DSFR) --- */
+        /* --- 1. DESIGN SYSTEM MODERNE & ARRONDIT --- */
         :root {
-            --blue-france: #000091;
-            --red-marianne: #E1000F;
-            --green-emeraude: #008941;
-            --grey-100: #f5f5fe;
-            --grey-200: #e3e3fd;
-            --text-default: #161616;
-            --text-mention: #666666;
-            --background: #f6f6f6;
-            --surface: #ffffff;
-            --border: #dddddd;
+            /* Palette Moderne */
+            --primary: #6366f1; /* Indigo vibrant */
+            --primary-hover: #4f46e5;
+            --bg-app: #f8fafc;  /* Gris très clair bleuté */
+            --bg-surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-light: #e2e8f0;
            
+            /* Status Colors */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
             /* Gantt Colors */
-            --gantt-blue: #000091;
-            --gantt-red: #E1000F;
-            --gantt-orange: #f97316;
-            --gantt-green: #008941;
+            --gantt-critique: #ef4444;
+            --gantt-haute: #f97316;
+            --gantt-moyenne: #3b82f6;
+            --gantt-termine: #10b981;
+
+            /* Ergonomie */
+            --radius-xl: 24px; /* Pour les conteneurs principaux */
+            --radius-lg: 16px; /* Pour les cartes */
+            --radius-md: 12px; /* Pour les boutons/inputs */
+            --radius-sm: 8px;  /* Pour les badges */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--background);
-            color: var(--text-default);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             height: 100vh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER MODERNE --- */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--surface);
-            padding: 16px 24px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            border-bottom: 2px solid var(--blue-france); /* Marqueur État */
-            margin-bottom: 24px;
+            margin-bottom: 32px;
         }
 
-        .brand {
+        .app-title {
+            font-weight: 800;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        .brand-logo {
-            font-weight: 900;
-            font-size: 1.2rem;
-            line-height: 1.1;
-            color: var(--text-default);
-        }
-
-        .brand-logo span { color: var(--blue-france); }
-
-        .app-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text-default);
-            padding-left: 12px;
-            border-left: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .sync-badge {
             font-size: 0.75rem;
-            padding: 4px 8px;
-            background: var(--grey-100);
-            color: var(--blue-france);
+            padding: 6px 12px;
+            background: var(--bg-surface);
+            color: var(--text-muted);
             font-weight: 600;
-            border-radius: 4px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex; align-items: center; gap: 6px;
         }
 
-        /* --- FILTERS & NAV --- */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        /* --- NAVIGATION & FILTRES --- */
         .toolbar-container {
             display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
+            gap: 20px;
+            margin-bottom: 24px;
+            background: var(--bg-surface);
+            padding: 8px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             align-items: center;
-            margin-bottom: 20px;
         }
 
-        .nav-group {
+        .nav-pills {
             display: flex;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: var(--bg-app);
+            padding: 4px;
+            border-radius: var(--radius-md);
         }
 
         .nav-btn {
@@ -105,231 +123,197 @@
             border: none;
             background: transparent;
             cursor: pointer;
-            font-weight: 500;
-            color: var(--text-mention);
-            border-right: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
             transition: 0.2s;
         }
-        .nav-btn:last-child { border-right: none; }
-        .nav-btn:hover { background: var(--grey-100); color: var(--blue-france); }
-        .nav-btn.active {
-            background: var(--blue-france);
-            color: white;
-        }
+        .nav-btn.active { background: var(--bg-surface); color: var(--primary); box-shadow: var(--shadow-sm); }
 
-        .filters-group {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-        }
+        .filters-group { display: flex; gap: 12px; flex: 1; justify-content: flex-end; }
        
-        select {
-            padding: 10px;
-            border: 1px solid var(--text-default); /* Bordure contrastée */
-            background: var(--surface);
-            min-width: 150px;
-            cursor: pointer;
+        select, input, textarea {
+            padding: 10px 16px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        .btn-action {
-            background: var(--blue-france);
-            color: white;
-            padding: 10px 24px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 0 0 #000060; /* Effet bouton État */
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-        .btn-action:active { transform: translateY(2px); box-shadow: 0 2px 0 0 #000060; }
-
-        /* --- MAIN CONTENT --- */
-        .content-area {
+        /* --- CONTAINER PRINCIPAL --- */
+        .content-card {
             flex: 1;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            position: relative;
         }
 
-        .view-section {
-            display: none;
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-        }
-        .view-section.active { display: block; }
+        .view-section { display: none; flex: 1; overflow-y: auto; padding: 32px; }
+        .view-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- KPI --- */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
+        /* --- DASHBOARD KPIS --- */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 40px; }
         .kpi-card {
-            padding: 24px;
-            background: var(--background);
-            border-left: 4px solid var(--blue-france);
+            padding: 24px; background: var(--bg-surface); border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 8px;
         }
-        .kpi-card.alert { border-color: var(--red-marianne); }
-       
-        .kpi-val { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 8px; }
-        .kpi-lbl { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-mention); }
+        .kpi-val { font-size: 2.5rem; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+        .kpi-lbl { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
 
-        /* --- TABLE --- */
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
+        /* --- TABLEAU MODERNE --- */
+        .table-container { border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-light); }
+        table { width: 100%; border-collapse: collapse; }
         th {
-            padding: 12px 16px;
-            background: var(--background);
-            color: var(--text-default);
-            font-weight: 700;
-            border-bottom: 2px solid var(--text-default);
-            font-size: 0.9rem;
+            padding: 16px 24px; background: #f1f5f9; text-align: left;
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;
         }
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.95rem;
-        }
-        tr:hover td { background: var(--grey-100); cursor: pointer; }
+        td { padding: 16px 24px; border-top: 1px solid var(--border-light); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; cursor: pointer; }
 
-        .badge-team {
-            display: inline-block;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text-mention);
-            background: var(--border);
-            padding: 2px 6px;
-            margin-left: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        /* BADGES OPTIMISÉS */
+        .badge {
+            display: inline-flex; align-items: center; padding: 4px 10px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
         }
-        .badge-project {
-            background: var(--grey-200);
-            color: var(--blue-france);
-            padding: 4px 8px;
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
-
-        /* --- GANTT OVERRIDES --- */
-        .gantt-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .bar-critique .bar { fill: var(--gantt-red) !important; }
-        .bar-haute .bar { fill: var(--gantt-orange) !important; }
-        .bar-moyenne .bar { fill: var(--gantt-blue) !important; }
-        .bar-termine .bar { fill: var(--gantt-green) !important; }
+        .badge-project { background: #e0e7ff; color: var(--primary); }
+        .badge-team { background: #f1f5f9; color: var(--text-muted); margin-left: 8px; border: 1px solid var(--border-light); }
        
-        /* --- MODAL --- */
+        /* --- GANTT OVERRIDES --- */
+        .gantt-container { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 20px; }
+        .bar-critique .bar { fill: var(--gantt-critique) !important; }
+        .bar-haute .bar { fill: var(--gantt-haute) !important; }
+        .bar-moyenne .bar { fill: var(--gantt-moyenne) !important; }
+        .bar-termine .bar { fill: var(--gantt-termine) !important; }
+       
+        /* --- MODALS (Principal & Quick Create) --- */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
             display: none; justify-content: center; align-items: center; z-index: 1000;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(4px);
         }
         .modal-box {
-            background: var(--surface);
-            width: 500px; max-width: 95%;
-            padding: 32px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-            border-top: 4px solid var(--blue-france);
+            background: var(--bg-surface); width: 550px; max-width: 95%;
+            padding: 40px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
         }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; }
-        input, select, textarea {
-            width: 100%; padding: 12px;
-            border: 1px solid var(--text-mention);
-            background: var(--surface);
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: 2px solid var(--blue-france);
-            border-color: transparent;
-        }
+        /* Mini modal pour Quick Create */
+        .modal-box.mini { width: 400px; padding: 32px; }
 
-        /* --- RESPONSIVE MOBILE --- */
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .modal-title { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        .btn-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+       
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+       
+        /* Bouton "Quick Create" (+) */
+        .input-group { display: flex; gap: 8px; }
+        .btn-quick-create {
+            padding: 0 12px; border: 1px solid var(--border-light); background: var(--bg-app);
+            border-radius: var(--radius-md); color: var(--primary); font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .btn-quick-create:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .modal-footer { display: flex; justify-content: flex-end; gap: 16px; margin-top: 40px; }
+        .btn-ghost { background: transparent; border: none; color: var(--text-muted); font-weight: 600; cursor: pointer; padding: 12px 24px; border-radius: var(--radius-md); }
+        .btn-ghost:hover { background: var(--bg-app); color: var(--text-main); }
+
+        /* MOBILE */
         @media (max-width: 768px) {
-            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .app-title { border-left: none; padding-left: 0; }
-            .toolbar-container { flex-direction: column; align-items: stretch; }
+            body { padding: 16px; }
+            .header { flex-direction: column; align-items: stretch; gap: 16px; }
+            .toolbar-container { flex-direction: column; align-items: stretch; padding: 16px; }
             .filters-group { flex-direction: column; }
             .form-grid { grid-template-columns: 1fr; }
-            .nav-group { width: 100%; }
-            .nav-btn { flex: 1; }
+            .view-section { padding: 16px; }
         }
     </style>
 </head>
 <body>
 
     <header class="header">
-        <div class="brand">
-            <div class="brand-logo">RÉPUBLIQUE<br><span>FRANÇAISE</span></div>
-            <div class="app-title">Cockpit Projets <span id="syncStatus" class="sync-badge">Chargement...</span></div>
+        <div class="app-title">
+            🚀 Project Cockpit
         </div>
-        <button class="btn-action" onclick="openModal()">+ Nouvelle Tâche</button>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div id="syncStatus" class="sync-badge">
+                <span style="display:inline-block; width:8px; height:8px; background:var(--warning); border-radius:50%;" id="syncDot"></span>
+                Connexion...
+            </div>
+            <button class="btn-primary" onclick="openModal()">
+                <span>+</span> Nouvelle Tâche
+            </button>
+        </div>
     </header>
 
     <div class="toolbar-container">
-        <div class="nav-group">
-            <button class="nav-btn active" onclick="switchView('dashboard', this)">Tableau de Bord</button>
+        <div class="nav-pills">
+            <button class="nav-btn active" onclick="switchView('dashboard', this)">Vue Liste</button>
             <button class="nav-btn" onclick="switchView('gantt', this)">Planning Gantt</button>
         </div>
-       
         <div class="filters-group">
-            <select id="filterProject" onchange="applyFilters()">
+            <select id="filterProject" onchange="applyFilters()" style="min-width: 180px;">
                 <option value="">Tous les Projets</option>
             </select>
-            <select id="filterAgent" onchange="applyFilters()">
+            <select id="filterAgent" onchange="applyFilters()" style="min-width: 180px;">
                 <option value="">Tous les Agents</option>
             </select>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="content-card">
        
         <div id="view-dashboard" class="view-section active">
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-val" id="kpi-total">0</div>
                     <div class="kpi-lbl">Total Tâches</div>
+                    <div class="kpi-val" id="kpi-total">0</div>
                 </div>
-                <div class="kpi-card alert">
-                    <div class="kpi-val" style="color: var(--red-marianne);" id="kpi-retard">0</div>
-                    <div class="kpi-lbl">En Retard</div>
+                <div class="kpi-card" style="background: #fef2f2;">
+                    <div class="kpi-lbl" style="color: var(--danger)">En Retard</div>
+                    <div class="kpi-val" style="color: var(--danger)" id="kpi-retard">0</div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-val" style="color: var(--green-emeraude);" id="kpi-progress">0%</div>
-                    <div class="kpi-lbl">Avancement Global</div>
+                <div class="kpi-card" style="background: #f0fdf4;">
+                    <div class="kpi-lbl" style="color: var(--success)">Avancement</div>
+                    <div class="kpi-val" style="color: var(--success)" id="kpi-progress">0%</div>
                 </div>
             </div>
 
-            <h3 style="margin-bottom: 20px;">Tâches en cours</h3>
-            <div class="table-responsive">
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>Titre</th>
-                            <th>Projet</th>
-                            <th>Responsable</th>
+                            <th>Tâche & Projet</th>
+                            <th>Responsable & Équipe</th>
                             <th>Échéance</th>
-                            <th>Avancement</th>
+                            <th>Progression</th>
                         </tr>
                     </thead>
-                    <tbody id="taskListBody">
-                        </tbody>
+                    <tbody id="taskListBody"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="view-gantt" class="view-section">
-            <div style="margin-bottom: 20px; display:flex; gap:10px;">
-                <span style="font-weight:700; align-self:center;">Zoom :</span>
-                <button class="nav-btn" style="border:1px solid #ddd" onclick="ganttChart.change_view_mode('Day')">Jour</button>
-                <button class="nav-btn" style="border:1px solid #ddd" onclick="ganttChart.change_view_mode('Week')">Semaine</button>
-                <button class="nav-btn" style="border:1px solid #ddd" onclick="ganttChart.change_view_mode('Month')">Mois</button>
+            <div style="margin-bottom: 20px; display:flex; gap:10px; justify-content: flex-end;">
+                <div class="nav-pills">
+                    <button class="nav-btn" onclick="ganttChart.change_view_mode('Day')">Jour</button>
+                    <button class="nav-btn active" onclick="ganttChart.change_view_mode('Week')">Semaine</button>
+                    <button class="nav-btn" onclick="ganttChart.change_view_mode('Month')">Mois</button>
+                </div>
             </div>
             <div id="gantt-chart" class="gantt-container"></div>
         </div>
@@ -337,27 +321,33 @@
 
     <div class="modal-overlay" id="taskModal">
         <div class="modal-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:24px;">
-                <h2 style="margin:0; color:var(--blue-france);" id="modalTitle">Nouvelle Tâche</h2>
-                <button style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeModal()">✕</button>
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nouvelle Tâche</h2>
+                <button class="btn-close" onclick="closeModal()">✕</button>
             </div>
            
             <form id="taskForm">
                 <input type="hidden" id="inpId">
                
-                <div style="margin-bottom:20px;">
+                <div class="form-group">
                     <label>Titre de la tâche</label>
-                    <input type="text" id="inpTitle" required placeholder="Ex: Rédaction du cahier des charges...">
+                    <input type="text" id="inpTitle" required placeholder="Ex: Lancement de la phase 2...">
                 </div>
 
                 <div class="form-grid">
                     <div>
                         <label>Projet</label>
-                        <select id="inpProject" required><option value="">Chargement...</option></select>
+                        <div class="input-group">
+                            <select id="inpProject" required><option value="">Chargement...</option></select>
+                            <button type="button" class="btn-quick-create" onclick="openQuickCreate('Project')" title="Nouveau Projet">+</button>
+                        </div>
                     </div>
                     <div>
                         <label>Responsable</label>
-                        <select id="inpAgent"><option value="">Chargement...</option></select>
+                        <div class="input-group">
+                            <select id="inpAgent"><option value="">Chargement...</option></select>
+                             <button type="button" class="btn-quick-create" onclick="openQuickCreate('Agent')" title="Nouvel Agent">+</button>
+                        </div>
                     </div>
                 </div>
 
@@ -379,80 +369,123 @@
                     </div>
                 </div>
 
-                <div style="text-align:right; margin-top:30px;">
-                    <button type="button" class="nav-btn" style="margin-right:10px;" onclick="closeModal()">Annuler</button>
-                    <button type="submit" class="btn-action">Enregistrer</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn-ghost" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer la tâche</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <div class="modal-overlay" id="qcProjectModal" style="z-index: 1100;">
+        <div class="modal-box mini">
+             <div class="modal-header">
+                <h3 class="modal-title">Nouveau Projet</h3>
+                <button class="btn-close" onclick="closeQuickCreate('Project')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Nom du Projet</label>
+                <input type="text" id="qcProjectName" placeholder="Ex: Refonte Intranet">
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="saveQuickCreate('Project')">Créer Projet</button>
+            </div>
+        </div>
+    </div>
+
+     <div class="modal-overlay" id="qcAgentModal" style="z-index: 1100;">
+        <div class="modal-box mini">
+             <div class="modal-header">
+                <h3 class="modal-title">Nouvel Agent</h3>
+                <button class="btn-close" onclick="closeQuickCreate('Agent')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Nom Complet</label>
+                <input type="text" id="qcAgentName" placeholder="Ex: Marie Curie">
+            </div>
+             <div class="form-group">
+                <label>Équipe</label>
+                 <div class="input-group">
+                    <select id="qcAgentTeam"><option value="">Aucune</option></select>
+                     <button type="button" class="btn-quick-create" onclick="openQuickCreate('Team')" title="Nouvelle Équipe">+</button>
+                 </div>
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="saveQuickCreate('Agent')">Créer Agent</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="qcTeamModal" style="z-index: 1200;">
+        <div class="modal-box mini">
+             <div class="modal-header">
+                <h3 class="modal-title">Nouvelle Équipe</h3>
+                <button class="btn-close" onclick="closeQuickCreate('Team')">✕</button>
+            </div>
+             <div class="form-group">
+                <label>Nom de l'équipe</label>
+                <input type="text" id="qcTeamName" placeholder="Ex: Marketing">
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="saveQuickCreate('Team')">Créer Équipe</button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
     <script>
-        // --- A. CONFIGURATION (Identifiants des Tables Grist) ---
-        const DB = {
-            TASKS: 'TACHES_MASTER',
-            AGENTS: 'AGENTS',
-            PROJECTS: 'PROJETS',
-            TEAMS: 'EQUIPES'
-        };
-
-        // État de l'application
+        // --- CONFIGURATION ---
+        const DB = { TASKS: 'TACHES_MASTER', AGENTS: 'AGENTS', PROJECTS: 'PROJETS', TEAMS: 'EQUIPES' };
         let appData = { tasks: [], agents: [], projects: [], teams: [] };
         let ganttChart = null;
 
-        // --- B. INITIALISATION ---
+        // --- INITIALISATION ---
         grist.ready({ requiredAccess: 'full' });
 
-        // Écouteur principal : Se déclenche quand Grist change
         grist.onRecords(async function() {
-            updateSyncStatus("Synchronisation...", true);
+            updateSyncStatus("Synchronisation...", "var(--warning)");
             await loadAllData();
-            updateSyncStatus("Données à jour", false);
+            updateSyncStatus("Données à jour", "var(--success)");
         });
 
-        // --- C. CHARGEMENT & JOINTURES (BACKEND LOGIC) ---
+        // --- LOAD DATA (BACKEND) ---
         async function loadAllData() {
             try {
-                // Chargement parallèle pour la performance
-                const [rawTasks, rawAgents, rawProjects, rawTeams] = await Promise.all([
-                    grist.docApi.fetchTable(DB.TASKS),
-                    grist.docApi.fetchTable(DB.AGENTS),
-                    grist.docApi.fetchTable(DB.PROJECTS),
-                    grist.docApi.fetchTable(DB.TEAMS)
-                ]);
-
-                // 1. Traitement Équipes
-                appData.teams = convertTable(rawTeams).map(r => ({
-                    id: r.id,
-                    name: r.Nom || r.Nom_Equipe || "Équipe"
-                }));
-
-                // 2. Traitement Agents (Jointure avec Équipe)
-                appData.agents = convertTable(rawAgents).map(r => {
-                    const team = appData.teams.find(t => t.id === r.Equipe) || { name: '' };
-                    return {
-                        id: r.id,
-                        name: r.Nom_Complet || r.Nom,
-                        teamName: team.name
-                    };
-                });
-
-                // 3. Traitement Projets
-                appData.projects = convertTable(rawProjects).map(r => ({
-                    id: r.id,
-                    name: r.Nom_Projet || r.Nom
-                }));
-               
-                // 4. Traitement Tâches (Jointure avec Agent & Projet)
-                const tasksObj = convertTable(rawTasks);
-                appData.tasks = tasksObj.map(t => {
-                    const agent = appData.agents.find(a => a.id === t.Responsable) || { name: 'Non assigné', teamName: '' };
+                // Chargement initial de TOUTES les tables
+                await Promise.all([loadProjects(), loadTeams(), loadAgents()]);
+                await loadTasks(); // Tâches chargées en dernier car dépendantes des autres
+                refreshUI();
+            } catch (e) {
+                console.error(e);
+                updateSyncStatus("Erreur ID Tables", "var(--danger)");
+            }
+        }
+       
+        // Fonctions de chargement individuelles (utiles pour le Quick Create)
+        async function loadProjects() {
+            const raw = await grist.docApi.fetchTable(DB.PROJECTS);
+            appData.projects = convertTable(raw).map(r => ({ id: r.id, name: r.Nom_Projet || r.Nom }));
+        }
+        async function loadTeams() {
+             const raw = await grist.docApi.fetchTable(DB.TEAMS);
+             appData.teams = convertTable(raw).map(r => ({ id: r.id, name: r.Nom || r.Nom_Equipe || "Équipe" }));
+        }
+        async function loadAgents() {
+            const raw = await grist.docApi.fetchTable(DB.AGENTS);
+            appData.agents = convertTable(raw).map(r => {
+                const team = appData.teams.find(t => t.id === r.Equipe);
+                return { id: r.id, name: r.Nom_Complet || r.Nom, teamName: team ? team.name : null };
+            });
+        }
+        async function loadTasks() {
+             const raw = await grist.docApi.fetchTable(DB.TASKS);
+             appData.tasks = convertTable(raw).map(t => {
+                    const agent = appData.agents.find(a => a.id === t.Responsable) || { name: 'Non assigné', teamName: null };
                     const project = appData.projects.find(p => p.id === t.Projet) || { name: 'Aucun' };
                    
-                    // Logique métier : Retard & Couleurs
                     const isLate = new Date(t.Date_Fin) < new Date() && t.Avancement < 100;
                     let color = 'bar-moyenne';
                     if(t.Avancement === 100) color = 'bar-termine';
@@ -460,52 +493,32 @@
                     else if(t.Priorite === 'Haute') color = 'bar-haute';
 
                     return {
-                        ...t, // Garde les champs bruts
-                        id: t.id.toString(),
-                        displayAgent: agent.name,
-                        displayTeam: agent.teamName,
-                        displayProject: project.name,
-                        // Format Gantt obligatoire
-                        name: t.Titre,
-                        start: formatDateIso(t.Date_Debut),
-                        end: formatDateIso(t.Date_Fin),
-                        progress: t.Avancement || 0,
-                        dependencies: t.Dependances || "",
-                        custom_class: color
+                        ...t, id: t.id.toString(),
+                        displayAgent: agent.name, displayTeam: agent.teamName, displayProject: project.name,
+                        name: t.Titre, start: formatDateIso(t.Date_Debut), end: formatDateIso(t.Date_Fin),
+                        progress: t.Avancement || 0, dependencies: t.Dependances || "", custom_class: color
                     };
                 });
-
-                refreshUI();
-
-            } catch (e) {
-                console.error(e);
-                updateSyncStatus("Erreur ID Tables", true);
-            }
         }
 
-        // --- D. GESTION DE L'INTERFACE (FRONTEND) ---
+
+        // --- UI RENDERING ---
         function refreshUI() {
-            populateSelects(); // Met à jour les menus déroulants
-            applyFilters();    // Lance le rendu (Dashboard + Gantt)
+            populateSelects();
+            applyFilters();
         }
 
         function applyFilters() {
             const fProj = document.getElementById('filterProject').value;
             const fAgent = document.getElementById('filterAgent').value;
-
-            // Filtrage côté client
             const filtered = appData.tasks.filter(t => {
-                const matchP = fProj === "" || t.Projet == fProj;
-                const matchA = fAgent === "" || t.Responsable == fAgent;
-                return matchP && matchA;
+                return (fProj === "" || t.Projet == fProj) && (fAgent === "" || t.Responsable == fAgent);
             });
-
             renderDashboard(filtered);
             renderGantt(filtered);
         }
 
         function renderDashboard(tasks) {
-            // 1. Calcul des KPIs
             const total = tasks.length;
             const retard = tasks.filter(t => new Date(t.end) < new Date() && t.progress < 100).length;
             const avg = total ? Math.round(tasks.reduce((a,b)=>a+b.progress,0)/total) : 0;
@@ -514,31 +527,33 @@
             document.getElementById('kpi-retard').innerText = retard;
             document.getElementById('kpi-progress').innerText = avg + "%";
 
-            // 2. Génération du Tableau HTML
             const tbody = document.getElementById('taskListBody');
             tbody.innerHTML = "";
-           
-            if(tasks.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px'>Aucune tâche trouvée</td></tr>";
-                return;
-            }
+            if(tasks.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:var(--text-muted);'>Aucune tâche</td></tr>"; return;}
 
             tasks.forEach(t => {
-                const teamBadge = t.displayTeam ? `<span class="badge-team">${t.displayTeam}</span>` : '';
+                // CORRECTION BADGE ÉQUIPE : Affichage conditionnel
+                const teamHtml = t.displayTeam ? `<span class="badge badge-team">${t.displayTeam}</span>` : '';
+
                 const tr = document.createElement('tr');
                 tr.onclick = () => openModal(t);
-               
                 tr.innerHTML = `
-                    <td style="font-weight:600">${t.Titre}</td>
-                    <td><span class="badge-project">${t.displayProject}</span></td>
-                    <td>${t.displayAgent} ${teamBadge}</td>
-                    <td>${t.end}</td>
                     <td>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="flex:1; background:#eee; height:8px; border-radius:4px;">
-                                <div style="width:${t.progress}%; background:${t.progress===100?'var(--green-emeraude)':'var(--blue-france)'}; height:100%; border-radius:4px;"></div>
+                        <div style="font-weight:600; margin-bottom:4px;">${t.Titre}</div>
+                        <span class="badge badge-project">${t.displayProject}</span>
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center;">
+                            ${t.displayAgent}
+                            ${teamHtml} </div>
+                    </td>
+                    <td style="font-size:0.9rem; color:var(--text-muted);">${t.end}</td>
+                    <td>
+                         <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="flex:1; background:var(--border-light); height:8px; border-radius:4px; overflow:hidden;">
+                                <div style="width:${t.progress}%; background:${t.progress===100?'var(--success)':'var(--primary)'}; height:100%;"></div>
                             </div>
-                            <span style="font-size:0.8rem; font-weight:600">${t.progress}%</span>
+                            <span style="font-size:0.8rem; font-weight:700">${t.progress}%</span>
                         </div>
                     </td>
                 `;
@@ -549,55 +564,91 @@
         function renderGantt(tasks) {
             const container = document.getElementById("gantt-chart");
             container.innerHTML = "";
-           
-            if(tasks.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:#999; padding:40px'>Aucune tâche à afficher dans le planning.</p>";
-                return;
-            }
-
+            if(tasks.length === 0) return;
             ganttChart = new Gantt("#gantt-chart", tasks, {
-                header_height: 50,
-                column_width: 30,
-                step: 24,
-                view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
-                bar_height: 25,
-                bar_corner_radius: 3,
-                arrow_curve: 5,
-                padding: 18,
-                view_mode: 'Week',
-                date_format: 'YYYY-MM-DD',
-                language: 'fr',
+                header_height: 50, column_width: 30, step: 24, view_modes: ['Day', 'Week', 'Month'],
+                bar_height: 24, bar_corner_radius: 12, arrow_curve: 12, padding: 18,
+                view_mode: 'Week', date_format: 'YYYY-MM-DD', language: 'fr',
                 on_click: task => openModal(task),
-                on_date_change: (task, start, end) => {
-                    saveAction('UpdateRecord', task.id, { Date_Debut: formatDateIso(start), Date_Fin: formatDateIso(end) });
-                },
-                on_progress_change: (task, progress) => {
-                    saveAction('UpdateRecord', task.id, { Avancement: progress });
-                }
+                on_date_change: (task, start, end) => saveAction('UpdateRecord', DB.TASKS, task.id, { Date_Debut: formatDateIso(start), Date_Fin: formatDateIso(end) }),
+                on_progress_change: (task, progress) => saveAction('UpdateRecord', DB.TASKS, task.id, { Avancement: progress })
             });
         }
 
-        // --- E. ACTIONS UTILISATEUR (SAVE) ---
-        async function saveAction(action, rowId, fields) {
-            updateSyncStatus("Sauvegarde...", true);
+        // --- ACTIONS & QUICK CREATE ---
+       
+        // Sauvegarde générique (Tâches)
+        async function saveAction(action, table, rowId, fields) {
+            updateSyncStatus("Sauvegarde...", "var(--warning)");
             const args = action === 'AddRecord' ? [null, fields] : [parseInt(rowId), fields];
-           
+            try { await grist.docApi.applyUserActions([[action, table, ...args]]); }
+            catch (e) { alert("Erreur : " + e.message); updateSyncStatus("Erreur", "var(--danger)");}
+        }
+
+        // --- LOGIQUE QUICK CREATE ---
+       
+        // Ouvrir le mini-modal
+        function openQuickCreate(type) {
+            document.getElementById('qc' + type + 'Name').value = ''; // Reset input
+            if(type === 'Agent') {
+                 // Pour un agent, il faut aussi mettre à jour le select des équipes dans le mini-modal
+                 populateSelectBox('#qcAgentTeam', appData.teams);
+            }
+            document.getElementById('qc' + type + 'Modal').style.display = 'flex';
+        }
+       
+        // Fermer le mini-modal
+        function closeQuickCreate(type) {
+            document.getElementById('qc' + type + 'Modal').style.display = 'none';
+        }
+
+        // Sauvegarder le Quick Create
+        async function saveQuickCreate(type) {
+            const name = document.getElementById('qc' + type + 'Name').value.trim();
+            if(!name) return;
+
+            updateSyncStatus("Création rapide...", "var(--primary)");
+            let table, fields;
+
+            // Définition des champs selon le type
+            if (type === 'Project') {
+                table = DB.PROJECTS; fields = { Nom_Projet: name };
+            } else if (type === 'Team') {
+                table = DB.TEAMS; fields = { Nom: name, Couleur: '#cccccc' }; // Couleur par défaut
+            } else if (type === 'Agent') {
+                table = DB.AGENTS;
+                const teamId = document.getElementById('qcAgentTeam').value;
+                fields = { Nom_Complet: name, Equipe: teamId ? parseInt(teamId) : null };
+            }
+
             try {
-                await grist.docApi.applyUserActions([[action, DB.TASKS, ...args]]);
-                // La mise à jour UI se fera via le listener onRecords
+                // 1. Envoi à Grist
+                await grist.docApi.applyUserActions([['AddRecord', table, null, fields]]);
+               
+                // 2. Rechargement ciblé des données (sans tout recharger)
+                if(type === 'Project') await loadProjects();
+                if(type === 'Team') { await loadTeams(); await loadAgents(); } // Recharger agents car ils dépendent des équipes
+                if(type === 'Agent') await loadAgents();
+
+                // 3. Mise à jour des selects du modal principal
+                populateSelects();
+                closeQuickCreate(type);
+                updateSyncStatus("Créé avec succès", "var(--success)");
+                setTimeout(() => updateSyncStatus("Données à jour", "var(--success)"), 2000);
+
             } catch (e) {
-                alert("Erreur lors de la sauvegarde : " + e.message);
-                updateSyncStatus("Erreur Sauvegarde", true);
+                alert("Erreur création rapide : " + e.message);
+                 updateSyncStatus("Erreur", "var(--danger)");
             }
         }
 
-        // Gestion du Formulaire Modal
-        const modal = document.getElementById('taskModal');
 
+        // --- MODALS PRINCIPAL ---
+        const modal = document.getElementById('taskModal');
         function openModal(task = null) {
-            const form = document.getElementById('taskForm');
+            // ... (Logique d'ouverture modal identique au code précédent, omise pour brièveté mais incluse dans le code complet au-dessus) ...
+             const form = document.getElementById('taskForm');
             if(task) {
-                // Mode Édition
                 document.getElementById('modalTitle').innerText = "Modifier la tâche";
                 document.getElementById('inpId').value = task.id;
                 document.getElementById('inpTitle').value = task.Titre;
@@ -608,7 +659,6 @@
                 document.getElementById('inpProgress').value = task.progress;
                 document.getElementById('inpPriority').value = task.Priorite;
             } else {
-                // Mode Création
                 form.reset();
                 document.getElementById('modalTitle').innerText = "Nouvelle Tâche";
                 document.getElementById('inpId').value = "";
@@ -618,14 +668,13 @@
             }
             modal.style.display = 'flex';
         }
-
         function closeModal() { modal.style.display = 'none'; }
-
+       
         document.getElementById('taskForm').onsubmit = function(e) {
             e.preventDefault();
-            const id = document.getElementById('inpId').value;
-           
-            const data = {
+            // ... (Logique soumission identique) ...
+             const id = document.getElementById('inpId').value;
+             const data = {
                 Titre: document.getElementById('inpTitle').value,
                 Projet: parseInt(document.getElementById('inpProject').value),
                 Responsable: parseInt(document.getElementById('inpAgent').value),
@@ -634,76 +683,44 @@
                 Avancement: parseInt(document.getElementById('inpProgress').value),
                 Priorite: document.getElementById('inpPriority').value
             };
-           
-            saveAction(id ? 'UpdateRecord' : 'AddRecord', id, data);
+            saveAction(id ? 'UpdateRecord' : 'AddRecord', DB.TASKS, id, data);
             closeModal();
         };
 
-        // --- F. UTILITAIRES ---
+        // --- UTILITAIRES ---
         function populateSelects() {
-            // Remplit les selects de filtres ET du formulaire en même temps
-            const fill = (selector, list) => {
-                const elements = document.querySelectorAll(selector);
+            // Remplit les filtres principaux ET les selects du modal principal
+            populateSelectBox('#filterProject, #inpProject', appData.projects);
+            populateSelectBox('#filterAgent, #inpAgent', appData.agents);
+        }
+
+        // Nouvelle fonction générique pour remplir un select
+        function populateSelectBox(selector, list) {
+             const elements = document.querySelectorAll(selector);
                 elements.forEach(el => {
                     const currentVal = el.value;
-                    // Garde la première option (ex: "Tous les...")
-                    const firstOption = el.options[0];
+                    const firstOption = el.options[0]; // Garde l'option par défaut (ex: "Choisir...")
                     el.innerHTML = "";
                     el.appendChild(firstOption);
-                   
                     list.forEach(item => {
                         const opt = document.createElement('option');
                         opt.value = item.id;
                         opt.innerText = item.name;
                         el.appendChild(opt);
                     });
-                    el.value = currentVal;
+                    // Tente de restaurer la valeur si elle existe encore
+                    if(list.some(i => i.id == currentVal)) el.value = currentVal;
                 });
-            };
-            fill('#filterProject, #inpProject', appData.projects);
-            fill('#filterAgent, #inpAgent', appData.agents);
         }
 
-        function convertTable(tableData) {
-            const keys = Object.keys(tableData);
-            if(keys.length === 0) return [];
-            const len = tableData.id.length;
-            const res = [];
-            for(let i=0; i<len; i++) {
-                let obj = {};
-                keys.forEach(k => obj[k] = tableData[k][i]);
-                res.push(obj);
-            }
-            return res;
+        function convertTable(tableData) { /* ... identique ... */ const keys = Object.keys(tableData); if(keys.length === 0) return []; const len = tableData.id.length; const res = []; for(let i=0; i<len; i++) { let obj = {}; keys.forEach(k => obj[k] = tableData[k][i]); res.push(obj); } return res; }
+        function formatDateIso(val) { /* ... identique ... */ if(!val) return new Date().toISOString().split('T')[0]; const d = typeof val === 'number' ? new Date(val * 1000) : new Date(val); return d.toISOString().split('T')[0]; }
+        function switchView(v, btn) { document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active')); document.getElementById('view-' + v).classList.add('active'); btn.classList.add('active'); if(v === 'gantt' && ganttChart) setTimeout(() => ganttChart.refresh(appData.tasks), 50); }
+        function updateSyncStatus(msg, color) { const dot = document.getElementById('syncDot'); dot.style.background = color; document.getElementById('syncStatus').childNodes[2].textContent = " " + msg; }
+        window.onclick = e => {
+            if(e.target == document.getElementById('taskModal')) closeModal();
+            if(e.target.classList.contains('modal-overlay')) e.target.style.display = 'none'; // Ferme les mini-modals
         }
-
-        function formatDateIso(val) {
-            if(!val) return new Date().toISOString().split('T')[0];
-            const d = typeof val === 'number' ? new Date(val * 1000) : new Date(val);
-            return d.toISOString().split('T')[0];
-        }
-
-        function switchView(viewId, btn) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-           
-            document.getElementById('view-' + viewId).classList.add('active');
-            btn.classList.add('active');
-           
-            // Hack pour forcer le redessin correct du SVG Gantt quand il devient visible
-            if(viewId === 'gantt' && ganttChart) {
-                setTimeout(() => ganttChart.refresh(appData.tasks), 50);
-            }
-        }
-       
-        function updateSyncStatus(msg, isLoading) {
-            const badge = document.getElementById('syncStatus');
-            badge.innerText = msg;
-            badge.style.opacity = isLoading ? 0.6 : 1;
-        }
-
-        // Fermeture modal au clic extérieur
-        window.onclick = function(e) { if(e.target == modal) closeModal(); }
     </script>
 </body>
 </html>
