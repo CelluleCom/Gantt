@@ -2,39 +2,29 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gantt'FIP - V33 Optimized</title>
+    <title>Gantt'FIP - Stable V33.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* DESIGN SYSTEM */
-        :root {
-            --primary: #4F46E5; --bg-app: #F8FAFC; --bg-surface: #FFFFFF;
-            --text-main: #1E293B; --text-muted: #64748B; --border: #E2E8F0;
-            --success: #10B981; --warning: #F59E0B; --danger: #EF4444; --info: #3B82F6;
-            --radius: 8px; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
+        :root { --primary: #4F46E5; --bg-app: #F8FAFC; --bg-surface: #FFFFFF; --text-main: #1E293B; --border: #E2E8F0; --success: #10B981; --warning: #F59E0B; --danger: #EF4444; --info: #3B82F6; }
         * { box-sizing: border-box; outline: none; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-main); margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* HEADER */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--bg-surface); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); flex-shrink: 0; }
+        /* HEADER & TOOLBAR */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--bg-surface); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; }
         .logo { font-weight: 800; font-size: 1.4rem; color: var(--primary); }
-        .sync-badge { font-size: 0.75rem; background: #fff; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); display: flex; gap: 6px; align-items: center; font-weight: 600; color: var(--text-muted); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
         .btn-main { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-
-        /* NAV */
+        
         .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; flex-shrink: 0; gap: 20px; }
         .nav-pills { display: flex; background: #E2E8F0; padding: 4px; border-radius: 8px; }
-        .nav-btn { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: var(--text-muted); border-radius: 6px; }
-        .nav-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow); }
-        
+        .nav-btn { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: #64748B; border-radius: 6px; }
+        .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .filters { display: flex; gap: 10px; flex: 1; justify-content: flex-end; }
         select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; min-width: 150px; background: white; cursor: pointer; }
 
-        /* CONTENT */
-        .workspace { flex: 1; background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+        /* WORKSPACE */
+        .workspace { flex: 1; background: var(--bg-surface); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
         .view-pane { flex: 1; overflow-y: auto; padding: 25px; display: none; }
         .view-pane.active { display: block; animation: fade 0.3s; }
         @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
@@ -42,23 +32,24 @@
         /* DASHBOARD */
         .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .card { padding: 20px; background: white; border: 1px solid var(--border); border-radius: 12px; }
-        .card-t { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+        .card-t { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748B; }
         .card-v { font-size: 2rem; font-weight: 800; margin-top: 5px; }
         
-        /* TABLE STYLES */
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { padding: 12px 15px; background: #F8FAFC; text-align: left; position: sticky; top: 0; font-weight: 600; color: var(--text-muted); z-index: 10; border-bottom: 1px solid var(--border); }
-        td { padding: 12px 15px; border-bottom: 1px solid var(--border); vertical-align: top; } /* Align top pour les badges */
+        th { padding: 12px 15px; background: #F8FAFC; text-align: left; position: sticky; top: 0; font-weight: 600; color: #64748B; border-bottom: 1px solid var(--border); }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border); vertical-align: top; }
         tr:hover td { background: #F8FAFC; cursor: pointer; }
         
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; border: 1px solid transparent; }
-        .agent-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+        /* BADGES & STYLING */
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
+        .agent-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
         .name-txt { font-weight: 600; color: var(--text-main); }
 
         /* GANTT */
         .gantt .grid-header { background: #fff; } 
         .gantt .bar { stroke: none; rx: 4px; }
-        /* Couleurs auto-générées utilisées par le JS, classes de secours ici */
+        .gantt-container { overflow: auto; height: 100%; }
+        /* Couleurs CSS de secours */
         .fill-Critique { fill: var(--danger) !important; }
         .fill-Haute { fill: var(--warning) !important; }
         .fill-Moyenne { fill: var(--info) !important; }
@@ -80,7 +71,6 @@
 
     <header class="header">
         <div class="logo">Gantt'FIP</div>
-        <div class="sync-badge"><div class="dot" id="syncDot"></div> <span id="syncText">Init...</span></div>
         <button class="btn-main" onclick="app.openModal()">+ Tâche</button>
     </header>
 
@@ -91,9 +81,9 @@
             <button class="nav-btn" onclick="app.view('list', this)">Liste</button>
         </div>
         <div class="filters">
-            <select id="fProj" onchange="app.render()"><option value="">Projets</option></select>
-            <select id="fTeam" onchange="app.render()"><option value="">Administrations</option></select>
-            <select id="fAgent" onchange="app.render()"><option value="">Responsables</option></select>
+            <select id="fProj" onchange="app.render()"><option value="">Tous Projets</option></select>
+            <select id="fTeam" onchange="app.render()"><option value="">Toutes Admin.</option></select>
+            <select id="fAgent" onchange="app.render()"><option value="">Tous Resp.</option></select>
         </div>
     </div>
 
@@ -105,7 +95,7 @@
                 <div class="card"><div class="card-t">Terminées</div><div class="card-v" style="color:var(--success)" id="k-ok">0</div></div>
                 <div class="card"><div class="card-t">Retard</div><div class="card-v" style="color:var(--danger)" id="k-late">0</div></div>
             </div>
-            <h3>📅 Tâches à venir</h3>
+            <h3>📅 Échéances à venir</h3>
             <table><thead><tr><th>Tâche & Projet</th><th>Responsable</th><th>Échéance</th><th>Statut</th></tr></thead><tbody id="tb-dash"></tbody></table>
         </div>
 
@@ -114,12 +104,12 @@
                 <button class="nav-btn" style="border:1px solid #ddd" onclick="app.zoom('Week')">Semaine</button>
                 <button class="nav-btn" style="border:1px solid #ddd" onclick="app.zoom('Month')">Mois</button>
             </div>
-            <div id="gantt-chart"></div>
+            <div id="gantt-chart" class="gantt-container"></div>
         </div>
 
         <div id="view-list" class="view-pane">
             <h3>Inventaire Complet</h3>
-            <table><thead><tr><th>Titre & Projet</th><th>Responsable</th><th>Fin</th><th>Prio</th><th>%</th></tr></thead><tbody id="tb-list"></tbody></table>
+            <table><thead><tr><th>Titre</th><th>Projet</th><th>Responsable</th><th>Équipe</th><th>Fin</th><th>Prio</th><th>%</th></tr></thead><tbody id="tb-list"></tbody></table>
         </div>
     </div>
 
@@ -129,48 +119,16 @@
             <form id="form">
                 <input type="hidden" id="inpId">
                 <div style="margin-bottom:15px"><label>Titre</label><input type="text" id="inpTitle" required></div>
-                
                 <div class="form-grid">
-                    <div>
-                        <label>Projet</label>
-                        <div class="grp">
-                            <select id="inpProject" required></select>
-                            <button type="button" class="btn-plus" onclick="app.addOption('inpProject')">+</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label>Responsable</label>
-                        <div class="grp">
-                            <select id="inpAssignee"></select>
-                            <button type="button" class="btn-plus" onclick="app.addOption('inpAssignee')">+</button>
-                        </div>
-                    </div>
+                    <div><label>Projet</label><div class="grp"><select id="inpProject" required></select><button type="button" class="btn-plus" onclick="app.addOption('inpProject')">+</button></div></div>
+                    <div><label>Administration</label><div class="grp"><select id="inpTeam"></select><button type="button" class="btn-plus" onclick="app.addOption('inpTeam')">+</button></div></div>
                 </div>
-
-                <div style="margin-bottom:15px">
-                    <label>Administration (Équipe)</label>
-                    <div class="grp">
-                        <select id="inpTeam"></select>
-                        <button type="button" class="btn-plus" onclick="app.addOption('inpTeam')">+</button>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div><label>Début</label><input type="date" id="inpStart" required></div>
-                    <div><label>Fin</label><input type="date" id="inpEnd" required></div>
-                </div>
-
+                <div style="margin-bottom:15px"><label>Responsable</label><div class="grp"><select id="inpAssignee"></select><button type="button" class="btn-plus" onclick="app.addOption('inpAssignee')">+</button></div></div>
+                <div class="form-grid"><div><label>Début</label><input type="date" id="inpStart" required></div><div><label>Fin</label><input type="date" id="inpEnd" required></div></div>
                 <div class="form-grid">
                     <div><label>Avancement %</label><input type="number" id="inpProgress" min="0" max="100"></div>
-                    <div>
-                        <label>Priorité</label>
-                        <select id="inpPriority">
-                            <option value="Basse">Basse</option><option value="Moyenne" selected>Moyenne</option>
-                            <option value="Haute">Haute</option><option value="Critique">Critique</option>
-                        </select>
-                    </div>
+                    <div><label>Priorité</label><select id="inpPriority"><option>Basse</option><option selected>Moyenne</option><option>Haute</option><option>Critique</option></select></div>
                 </div>
-
                 <div class="m-foot">
                     <button type="button" onclick="app.closeModal()" style="padding:10px 20px;border:1px solid #ddd;background:none;border-radius:6px;cursor:pointer">Annuler</button>
                     <button type="submit" class="btn-main">Enregistrer</button>
@@ -183,7 +141,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
     <script>
-        // CONFIGURATION
         const TABLE_NAME = 'TACHES_MASTER';
 
         const app = {
@@ -197,18 +154,13 @@
             },
 
             async load() {
-                this.status("Chargement...", "orange");
                 try {
                     const raw = await grist.docApi.fetchTable(TABLE_NAME);
                     this.process(raw);
-                    // Remplissage des listes une seule fois au chargement pour la stabilité
+                    // Remplissage unique au chargement pour stabilité
                     this.fillSelects(); 
                     this.render();
-                    this.status("Prêt", "var(--success)");
-                } catch (e) {
-                    console.error(e);
-                    this.status("Erreur Table", "red");
-                }
+                } catch (e) { console.error(e); }
             },
 
             process(raw) {
@@ -231,32 +183,27 @@
                         priority: raw.Priorite[i] || "Moyenne",
                     };
 
-                    // Sécurité Dates
                     if(!t.start) t.start = new Date().toISOString().split('T')[0];
                     if(!t.end) t.end = t.start;
                     if(t.end < t.start) t.end = t.start;
 
-                    // Alimentation Listes
                     if(t.project && t.project !== "Aucun") this.lists.projects.add(t.project);
                     if(t.assignee && t.assignee !== "Non assigné") this.lists.agents.add(t.assignee);
                     if(t.team) this.lists.teams.add(t.team);
 
-                    // Gantt
                     t.custom_class = 'fill-' + t.priority;
                     if(t.progress == 100) t.custom_class = 'fill-Done';
-                    t.name = t.title;
+                    t.name = t.title; 
 
                     this.data.push(t);
                 }
                 this.data.sort((a,b) => new Date(a.start) - new Date(b.start));
             },
 
-            // Fonction séparée pour ne pas écraser la sélection
             fillSelects() {
                 this.fillSel('fProj', this.lists.projects);
                 this.fillSel('fTeam', this.lists.teams);
                 this.fillSel('fAgent', this.lists.agents);
-                
                 this.fillSel('inpProject', this.lists.projects);
                 this.fillSel('inpAssignee', this.lists.agents);
                 this.fillSel('inpTeam', this.lists.teams);
@@ -267,40 +214,32 @@
                 const ft = document.getElementById('fTeam').value;
                 const fa = document.getElementById('fAgent').value;
 
-                // FILTRAGE
                 const res = this.data.filter(t => 
                     (fp === "" || t.project === fp) &&
                     (ft === "" || t.team === ft) &&
                     (fa === "" || t.assignee === fa)
                 );
 
-                // DASHBOARD
+                // KPI
                 document.getElementById('k-tot').innerText = res.length;
                 document.getElementById('k-run').innerText = res.filter(t=>t.progress>0 && t.progress<100).length;
                 document.getElementById('k-ok').innerText = res.filter(t=>t.progress==100).length;
                 document.getElementById('k-late').innerText = res.filter(t=>new Date(t.end)<new Date() && t.progress<100).length;
 
-                // TABLES HTML GENERATION
+                // Tables
                 const tbDash = document.getElementById('tb-dash'); tbDash.innerHTML = "";
                 const tbList = document.getElementById('tb-list'); tbList.innerHTML = "";
 
-                if (res.length === 0) {
-                    const empty = "<tr><td colspan='5' style='text-align:center;color:#999;padding:20px'>Aucune donnée trouvée</td></tr>";
-                    tbDash.innerHTML = empty; tbList.innerHTML = empty;
-                }
-
                 res.forEach((t, idx) => {
                     const row = `<tr onclick="app.edit('${t.id}')">`;
+                    const sP = this.getBadgeStyle(t.project);
+                    const sT = this.getBadgeStyle(t.team);
                     
-                    // Génération Badges Dynamiques
-                    const styProj = this.getBadgeStyle(t.project, 'proj');
-                    const styTeam = this.getBadgeStyle(t.team, 'team');
+                    const badgeP = `<span class="badge" style="${sP}">${t.project}</span>`;
+                    const badgeT = t.team ? `<span class="badge" style="${sT}">${t.team}</span>` : '';
                     
-                    const badgeP = `<span class="badge" style="${styProj}">${t.project}</span>`;
-                    const badgeT = t.team ? `<span class="badge" style="${styTeam}">${t.team}</span>` : '';
-                    
-                    // Dashboard (Top 5)
-                    if(idx < 5) {
+                    // Dash
+                    if(idx < 7) {
                         tbDash.innerHTML += `${row}
                             <td><strong>${t.name}</strong><br>${badgeP}</td>
                             <td><div class="agent-stack"><span class="name-txt">${t.assignee}</span>${badgeT}</div></td>
@@ -308,76 +247,64 @@
                             <td><span style="color:${t.progress==100?'var(--success)':'var(--info)'};font-weight:700">${t.progress}%</span></td>
                         </tr>`;
                     }
-                    
-                    // Liste Complète
+                    // List
                     tbList.innerHTML += `${row}
                         <td><strong>${t.name}</strong><br>${badgeP}</td>
+                        <td>${badgeP}</td>
                         <td><div class="agent-stack"><span class="name-txt">${t.assignee}</span>${badgeT}</div></td>
-                        <td>${t.end}</td>
-                        <td>${t.priority}</td>
-                        <td>${t.progress}%</td>
+                        <td>${badgeT}</td><td>${t.end}</td><td>${t.priority}</td><td>${t.progress}%</td>
                     </tr>`;
                 });
 
-                // GANTT
+                // Gantt
                 const elG = document.getElementById('gantt-chart');
                 elG.innerHTML = "";
                 if(res.length > 0) {
-                    // Mapping spécifique Frappe Gantt
-                    const ganttData = res.map(t => ({
-                        id: t.id, name: t.name, start: t.start, end: t.end, 
-                        progress: t.progress, custom_class: t.custom_class
-                    }));
-
-                    this.gantt = new Gantt("#gantt-chart", ganttData, {
+                    const gData = res.map(t => ({ id:t.id, name:t.name, start:t.start, end:t.end, progress:t.progress, custom_class:t.custom_class }));
+                    this.gantt = new Gantt("#gantt-chart", gData, {
                         header_height: 50, column_width: 30, step: 24, view_modes: ['Week', 'Month'],
-                        bar_height: 25, bar_corner_radius: 3, arrow_curve: 5, padding: 18,
+                        bar_height: 25, bar_corner_radius: 4, arrow_curve: 5, padding: 18,
                         view_mode: 'Week', language: 'fr',
                         on_click: t => this.edit(t.id),
                         on_date_change: (t,s,e) => this.save(t.id, {Date_Debut:this.fmt(s), Date_Fin:this.fmt(e)}),
                         on_progress_change: (t,p) => this.save(t.id, {Avancement:p})
                     });
                     
-                    // AUTO-SCROLL GANTT (Fix centrage)
+                    // Scroll automatique au début
                     setTimeout(() => {
-                        const firstBar = document.querySelector('.bar');
-                        if(firstBar && document.querySelector('.gantt-container')) {
-                            // On scrolle un peu avant la première barre pour le confort
-                            const x = firstBar.getBBox().x - 50; 
-                            document.querySelector('.gantt-container').scrollLeft = x > 0 ? x : 0;
-                        }
+                        const bar = document.querySelector('.bar');
+                        if(bar) document.querySelector('.gantt-container').scrollLeft = bar.getAttribute('x') - 50;
                     }, 500);
-
-                } else { elG.innerHTML = "<p style='text-align:center;padding:30px;color:#999'>Aucune tâche à afficher</p>"; }
+                } else { elG.innerHTML = "<p style='text-align:center;padding:20px;color:#999'>Aucune tâche</p>"; }
             },
 
-            // --- ACTIONS ---
             async save(id, data) {
-                this.status("Sauvegarde...", "orange");
                 const action = id ? 'UpdateRecord' : 'AddRecord';
                 const args = id ? [parseInt(id), data] : [null, data];
-                try {
-                    await grist.docApi.applyUserActions([[action, TABLE_NAME, ...args]]);
-                } catch(e) { alert("Erreur: " + e.message); }
+                try { await grist.docApi.applyUserActions([[action, TABLE_NAME, ...args]]); } 
+                catch(e) { alert("Erreur: " + e.message); }
             },
 
+            // --- CORRECTION : AJOUT DIRECT DANS LA LISTE SANS RECHARGER TOUT ---
             addOption(id) {
                 const val = prompt("Nouveau nom :");
                 if(val) {
                     const sel = document.getElementById(id);
+                    // Crée l'option et l'ajoute au DOM
                     const opt = document.createElement('option');
                     opt.value = val; opt.innerText = val;
-                    sel.appendChild(opt); sel.value = val;
+                    sel.appendChild(opt);
+                    sel.value = val; // Sélectionne
                 }
             },
 
-            // --- UI UTILS ---
+            // UTILS
             view(v, btn) {
-                document.querySelectorAll('.view-pane').forEach(e => e.classList.remove('active'));
-                document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+                document.querySelectorAll('.view-pane').forEach(e=>e.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
                 document.getElementById('view-'+v).classList.add('active');
                 btn.classList.add('active');
-                if(v==='gantt' && this.gantt) setTimeout(()=>this.gantt.refresh(this.data.map(t=>({id:t.id, name:t.name, start:t.start, end:t.end, progress:t.progress, custom_class:t.custom_class}))), 50);
+                if(v==='gantt' && this.gantt) setTimeout(()=>{ this.gantt.refresh(this.data); }, 50);
             },
 
             edit(id) {
@@ -427,27 +354,20 @@
                 let exists = false;
                 for(let i=0; i<el.options.length; i++) if(el.options[i].value == val) exists = true;
                 if(!exists && val) {
-                    const opt = document.createElement('option');
-                    opt.value = val; opt.innerText = val;
+                    const op = document.createElement('option');
+                    op.value = val; opt.innerText = val;
                     el.appendChild(opt);
                 }
             },
 
             fmt(v) { if(!v) return null; const d = typeof v==='number'?new Date(v*1000):new Date(v); return d.toISOString().split('T')[0]; },
             zoom(m) { if(this.gantt) this.gantt.change_view_mode(m); },
-            status(txt, col) { document.getElementById('syncText').innerText = txt; document.getElementById('syncDot').style.background = col; },
             
-            // Générateur de couleurs pastel dynamiques
-            getBadgeStyle(str, type) {
+            getBadgeStyle(str) {
                 if(!str) return "display:none";
-                let hash = 0;
-                for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                // Couleur HSL : Teinte stable selon le nom, Saturation et Luminosité fixes pour la lisibilité
+                let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
                 const h = Math.abs(hash % 360);
-                const bg = `hsl(${h}, 85%, 94%)`; // Fond très clair
-                const txt = `hsl(${h}, 70%, 30%)`; // Texte sombre accordé
-                const border = `hsl(${h}, 60%, 85%)`;
-                return `background:${bg}; color:${txt}; border:1px solid ${border}`;
+                return `background:hsl(${h}, 85%, 96%); color:hsl(${h}, 70%, 30%); border:1px solid hsl(${h}, 60%, 85%)`;
             }
         };
 
