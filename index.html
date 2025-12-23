@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP - Ultimate V26</title>
+    <title>Gantt'FIP - V27 Universelle</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- 1. CORE DESIGN SYSTEM --- */
+        /* --- 1. DESIGN SYSTEM --- */
         :root {
             --primary: #4F46E5; --primary-dark: #4338CA; --primary-light: #E0E7FF;
             --bg-body: #F1F5F9; --bg-surface: #FFFFFF;
@@ -22,6 +22,13 @@
 
         * { box-sizing: border-box; outline: none; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* BOITE DE DIAGNOSTIC (S'affiche en cas d'erreur) */
+        #error-log {
+            display: none; position: fixed; bottom: 20px; right: 20px; width: 400px;
+            background: #FEF2F2; border: 2px solid #EF4444; padding: 20px; border-radius: 12px;
+            color: #991B1B; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-size: 0.85rem;
+        }
 
         /* --- 2. LAYOUT --- */
         .header {
@@ -72,12 +79,13 @@
         .badge.team { background: #1E293B; color: white; margin-top: 4px; }
         
         /* GANTT */
-        .gantt-wrapper { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+        .gantt-wrapper { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; height: 100%; }
         .gantt .grid-header { background: #fff; height: 50px; }
         .gantt .grid-row { fill: #fff; } .gantt .grid-row:nth-child(even) { fill: #F8FAFC; }
         .gantt .row-line { stroke: #E2E8F0; } 
         .gantt .bar { rx: 4px; ry: 4px; stroke: none; }
         .gantt .bar-label { fill: #1E293B; font-weight: 600; font-size: 12px; }
+        
         /* Couleurs dynamiques */
         .fill-Critical { fill: var(--danger) !important; }
         .fill-High { fill: var(--warning) !important; }
@@ -87,7 +95,7 @@
 
         /* MODAL */
         .overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .modal { background: white; width: 500px; padding: 30px; border-radius: var(--radius-xl); box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
+        .modal { background: white; width: 500px; padding: 30px; border-radius: var(--radius-lg); box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
@@ -111,11 +119,16 @@
 <body>
 
     <div id="loader"><div class="spinner"></div>Chargement des données...</div>
+    <div id="error-log">
+        <strong>⚠️ Erreur détectée :</strong><br>
+        <span id="error-msg"></span><br>
+        <button onclick="document.getElementById('error-log').style.display='none'" style="margin-top:10px; padding:5px 10px; cursor:pointer;">Fermer</button>
+    </div>
 
     <header class="header">
         <div class="logo">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            Project Cockpit V26
+            Project Cockpit
         </div>
         <div style="display: flex; gap: 15px; align-items: center;">
             <div class="badge-sync"><div class="dot" id="syncDot"></div> <span id="syncText">Init...</span></div>
@@ -250,7 +263,16 @@
                 try {
                     grist.ready({ requiredAccess: 'full' });
                     grist.onRecords(async () => await this.load());
-                } catch (e) { console.error("Init Error", e); }
+                } catch (e) { this.logError("Erreur d'initialisation : " + e.message); }
+            }
+
+            // --- SCANNER INTELLIGENT QUI CHERCHE FR ET EN ---
+            // C'est ici que la magie opère pour éviter les erreurs
+            getValue(row, index, keys) {
+                for (let key of keys) {
+                    if (row[key] && row[key][index] !== undefined) return row[key][index];
+                }
+                return null; // Rien trouvé
             }
 
             async load() {
@@ -262,15 +284,13 @@
                     this.updateStatus("Connecté", "active");
                 } catch (e) {
                     console.error(e);
-                    this.updateStatus("Erreur Données", "false"); // Red dot implies error logic in CSS? No, standard logic.
-                    // Fallback visual
-                    document.getElementById('syncDot').style.background = 'red';
+                    this.logError("Table 'TACHES_MASTER' introuvable. Vérifiez le nom dans Grist.");
+                    this.updateStatus("Erreur Table", "false");
                 } finally {
                     this.toggleLoader(false);
                 }
             }
 
-            // --- DATA PROCESSING ---
             processData(raw) {
                 this.data = [];
                 this.sets.projects.clear();
@@ -279,29 +299,41 @@
 
                 const ids = raw.id;
                 for (let i = 0; i < ids.length; i++) {
-                    // MAPPING ANGLAIS <-> FRANCAIS EST ICI
+                    
+                    // Récupération TOLÉRANTE (Cherche En, puis Fr)
+                    const title = this.getValue(raw, i, ['Title', 'Titre', 'Nom', 'Task']) || "Sans titre";
+                    const project = this.getValue(raw, i, ['Project', 'Projet']) || "Aucun";
+                    const assignee = this.getValue(raw, i, ['Assignee', 'Responsable', 'Agent']) || "Non assigné";
+                    const team = this.getValue(raw, i, ['Team', 'Equipe', 'Administration']) || "Sans équipe";
+                    
+                    let startRaw = this.getValue(raw, i, ['StartDate', 'Date_Debut', 'Debut']);
+                    let endRaw = this.getValue(raw, i, ['EndDate', 'Date_Fin', 'Fin', 'Echeance']);
+                    
+                    const progress = this.getValue(raw, i, ['Progress', 'Avancement']) || 0;
+                    const priority = this.getValue(raw, i, ['Priority', 'Priorite']) || "Medium";
+
+                    // Conversion Dates Sécurisée
+                    let start = this.fmtDate(startRaw);
+                    let end = this.fmtDate(endRaw);
+                    
+                    // Si dates invalides, on met aujourd'hui pour pas planter le Gantt
+                    if (!start || !end) { 
+                        const today = new Date().toISOString().split('T')[0];
+                        start = today; 
+                        end = today; 
+                    }
+                    if (end < start) end = start;
+
                     const t = {
                         id: ids[i].toString(),
-                        title: raw.Title[i] || "Sans titre",
-                        project: raw.Project[i] || "Aucun",
-                        assignee: raw.Assignee[i] || "Non assigné",
-                        team: raw.Team[i] || "Sans équipe",
-                        start: this.fmtDate(raw.StartDate[i]),
-                        end: this.fmtDate(raw.EndDate[i]),
-                        progress: raw.Progress[i] || 0,
-                        priority: raw.Priority[i] || "Medium",
-                        
-                        // Derived
-                        _search: (raw.Title[i] + raw.Assignee[i] + raw.Project[i]).toLowerCase()
+                        title, project, assignee, team, start, end, progress, priority,
+                        _search: (title + assignee + project).toLowerCase()
                     };
 
-                    // Auto-correction dates
-                    if (t.end < t.start) t.end = t.start;
-
                     // Ajout aux listes uniques
-                    if(t.project) this.sets.projects.add(t.project);
-                    if(t.assignee) this.sets.agents.add(t.assignee);
-                    if(t.team) this.sets.teams.add(t.team);
+                    if(project && project !== "Aucun") this.sets.projects.add(project);
+                    if(assignee && assignee !== "Non assigné") this.sets.agents.add(assignee);
+                    if(team && team !== "Sans équipe") this.sets.teams.add(team);
 
                     // Gantt config
                     t.custom_class = this.getColorClass(t);
@@ -310,19 +342,15 @@
                     this.data.push(t);
                 }
                 
-                // Sort by start date
                 this.data.sort((a,b) => new Date(a.start) - new Date(b.start));
             }
 
-            // --- RENDERING ---
             render() {
-                // Populate Selects
                 this.fillSelect('fProj', this.sets.projects);
                 this.fillSelect('fAgent', this.sets.agents);
                 this.fillSelect('inpProject', this.sets.projects);
                 this.fillSelect('inpAssignee', this.sets.agents);
                 this.fillSelect('inpTeam', this.sets.teams);
-
                 this.filter();
             }
 
@@ -339,11 +367,13 @@
 
                 this.drawDashboard(res);
                 this.drawList(res);
-                this.drawGantt(res);
+                
+                // Gantt séparé pour éviter crash global si erreur de rendu
+                try { this.drawGantt(res); } 
+                catch(e) { console.warn("Erreur affichage Gantt", e); document.getElementById('gantt-chart').innerHTML = "Erreur données Gantt"; }
             }
 
             drawDashboard(tasks) {
-                // KPIs
                 const tot = tasks.length;
                 const done = tasks.filter(t => t.progress === 100).length;
                 const active = tasks.filter(t => t.progress > 0 && t.progress < 100).length;
@@ -355,18 +385,13 @@
                 document.getElementById('k-rate').innerText = tot ? Math.round((done/tot)*100)+"%" : "0%";
                 document.getElementById('k-late').innerText = late;
 
-                // Table Dash
                 const tb = document.getElementById('tb-dash');
                 tb.innerHTML = "";
                 tasks.slice(0, 5).forEach(t => {
                     tb.innerHTML += `
                     <tr onclick="app.openModal('${t.id}')">
-                        <td>
-                            <div style="font-weight:600">${t.title}</div>
-                            <span class="badge proj">${t.project}</span>
-                        </td>
-                        <td>${t.assignee}</td>
-                        <td>${t.end}</td>
+                        <td><div style="font-weight:600">${t.title}</div><span class="badge proj">${t.project}</span></td>
+                        <td>${t.assignee}</td><td>${t.end}</td>
                         <td><span style="font-weight:700; color:var(--primary)">${t.progress}%</span></td>
                     </tr>`;
                 });
@@ -384,14 +409,7 @@
                         <td><span class="badge team">${t.team}</span></td>
                         <td>${t.end}</td>
                         <td>${t.priority}</td>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:5px">
-                                <div style="flex:1; height:6px; background:#e2e8f0; border-radius:3px">
-                                    <div style="width:${t.progress}%; height:100%; background:var(--primary); border-radius:3px"></div>
-                                </div>
-                                <span style="font-size:0.7rem">${t.progress}%</span>
-                            </div>
-                        </td>
+                        <td><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px"><div style="width:${t.progress}%;height:100%;background:var(--primary);border-radius:3px"></div></div><span style="font-size:0.7rem">${t.progress}%</span></div></td>
                     </tr>`;
                 });
             }
@@ -399,7 +417,7 @@
             drawGantt(tasks) {
                 const el = document.getElementById('gantt-chart');
                 el.innerHTML = "";
-                if(tasks.length === 0) return;
+                if(tasks.length === 0) { el.innerHTML = "<p style='text-align:center; padding:20px; color:#999'>Aucune donnée à afficher</p>"; return; }
 
                 this.gantt = new Gantt("#gantt-chart", tasks, {
                     header_height: 50, column_width: 30, step: 24,
@@ -407,23 +425,40 @@
                     bar_height: 25, bar_corner_radius: 3, arrow_curve: 5, padding: 18,
                     view_mode: 'Week', date_format: 'YYYY-MM-DD', language: 'fr',
                     on_click: t => this.openModal(t.id),
-                    on_date_change: (t, s, e) => this.save(t.id, { StartDate: this.fmtDate(s), EndDate: this.fmtDate(e) }),
-                    on_progress_change: (t, p) => this.save(t.id, { Progress: p })
+                    on_date_change: (t, s, e) => this.save(t.id, { StartDate: this.fmtDate(s), EndDate: this.fmtDate(e) }), // Envoie ID Anglais
+                    on_progress_change: (t, p) => this.save(t.id, { Progress: p }) // Envoie ID Anglais
                 });
             }
 
             // --- ACTIONS ---
             async save(id, fields) {
-                this.updateStatus("Sauvegarde...", "false"); // Yellowish logic handled by text
-                document.getElementById('syncDot').style.background = 'orange';
-                
+                this.updateStatus("Sauvegarde...", "false");
                 const action = id ? 'UpdateRecord' : 'AddRecord';
                 const args = id ? [parseInt(id), fields] : [null, fields];
                 
                 try {
+                    // TENTATIVE 1 : SAUVEGARDE EN ANGLAIS (Standard V26)
                     await grist.docApi.applyUserActions([[action, this.TABLE_NAME, ...args]]);
-                    // Grist auto-reloads thanks to onRecords
-                } catch(e) { alert("Erreur: " + e.message); }
+                } catch(e) {
+                    // TENTATIVE 2 : SI ECHEC, ESSAI EN FRANCAIS (Fallback V25)
+                    console.warn("Échec sauvegarde EN, tentative FR...");
+                    let frFields = {};
+                    if(fields.Title) frFields.Titre = fields.Title;
+                    if(fields.Project) frFields.Projet = fields.Project;
+                    if(fields.Assignee) frFields.Responsable = fields.Assignee;
+                    if(fields.Team) frFields.Equipe = fields.Team;
+                    if(fields.StartDate) frFields.Date_Debut = fields.StartDate;
+                    if(fields.EndDate) frFields.Date_Fin = fields.EndDate;
+                    if(fields.Progress) frFields.Avancement = fields.Progress;
+                    if(fields.Priority) frFields.Priorite = fields.Priority;
+                    
+                    try {
+                        const argsFr = id ? [parseInt(id), frFields] : [null, frFields];
+                        await grist.docApi.applyUserActions([[action, this.TABLE_NAME, ...argsFr]]);
+                    } catch(e2) {
+                        alert("Erreur de sauvegarde : " + e2.message);
+                    }
+                }
             }
 
             addOption(selectId) {
@@ -432,8 +467,7 @@
                     const sel = document.getElementById(selectId);
                     const opt = document.createElement('option');
                     opt.value = val; opt.innerText = val;
-                    sel.appendChild(opt);
-                    sel.value = val;
+                    sel.appendChild(opt); sel.value = val;
                 }
             }
 
@@ -470,8 +504,13 @@
             
             updateStatus(txt, state) {
                 document.getElementById('syncText').innerText = txt;
-                const d = document.getElementById('syncDot');
-                d.className = state === 'active' ? 'dot active' : 'dot';
+                document.getElementById('syncDot').className = state === 'active' ? 'dot active' : 'dot';
+            }
+
+            logError(msg) {
+                const box = document.getElementById('error-log');
+                document.getElementById('error-msg').innerText = msg;
+                box.style.display = 'block';
             }
 
             setView(v, btn) {
@@ -485,8 +524,10 @@
             zoom(m) { if(this.gantt) this.gantt.change_view_mode(m); }
 
             fmtDate(v) {
-                if(!v) return new Date().toISOString().split('T')[0];
+                if(!v) return null;
+                // Gère timestamp (secondes) ou string
                 const d = typeof v === 'number' ? new Date(v*1000) : new Date(v);
+                if(isNaN(d.getTime())) return null;
                 return d.toISOString().split('T')[0];
             }
 
@@ -512,7 +553,6 @@
 
             setSelect(id, val) {
                 const el = document.getElementById(id);
-                // Create option if missing
                 let exists = false;
                 for(let i=0;i<el.options.length;i++) if(el.options[i].value==val) exists=true;
                 if(!exists && val) {
@@ -532,6 +572,7 @@
         document.getElementById('formTask').onsubmit = (e) => {
             e.preventDefault();
             const id = document.getElementById('inpId').value;
+            // Envoi en Anglais (sera converti en FR si échec)
             const data = {
                 Title: document.getElementById('inpTitle').value,
                 Project: document.getElementById('inpProject').value,
@@ -546,10 +587,7 @@
             app.closeModal();
         };
 
-        // Click Outside Modal
-        window.onclick = (e) => {
-            if (e.target.classList.contains('overlay')) app.closeModal();
-        };
+        window.onclick = (e) => { if (e.target.classList.contains('overlay')) app.closeModal(); };
     </script>
 </body>
 </html>
