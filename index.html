@@ -3,36 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP - Pilotage V13</title>
+    <title>Gantt'FIP - Pilotage V9</title>
    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    
     <style>
-        /* --- 1. DESIGN SYSTEM (Base V10 Conservée) --- */
+        /* --- 1. CHARTE GRAPHIQUE --- */
         :root {
-            --primary: #4F46E5;       /* Indigo Moderne */
+            --primary: #4F46E5;       /* Indigo (Style image) */
             --primary-dark: #3730a3;
+            --secondary: #64748b;
            
-            --bg-body: #F8FAFC;
+            --bg-body: #F8FAFC;       /* Fond très clair */
             --bg-surface: #FFFFFF;
            
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
 
-            /* Couleurs Statut */
+            /* Couleurs Statut/Priorité */
+            --color-todo: #94a3b8;
             --color-progress: #3b82f6; /* Bleu */
             --color-done: #10b981;     /* Vert */
             --color-late: #ef4444;     /* Rouge */
            
-            /* Priorités */
+            /* Priorités Gantt */
             --prio-critique: #ef4444;
             --prio-haute: #f97316;
             --prio-moyenne: #3b82f6;
             --prio-basse: #94a3b8;
 
-            --radius: 10px;
+            --radius: 8px;
             --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
         }
 
@@ -61,7 +63,6 @@
 
         /* --- TOOLBAR --- */
         .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
-       
         .view-switcher { background: #e2e8f0; padding: 4px; border-radius: 8px; display: flex; }
         .view-btn {
             border: none; background: transparent; padding: 6px 16px; font-size: 0.85rem;
@@ -70,7 +71,7 @@
         .view-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
         .filters { display: flex; gap: 10px; }
-        select { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; color: var(--text-main); cursor: pointer; background: white; min-width: 160px; }
+        select { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; color: var(--text-main); cursor: pointer; background: white; }
 
         /* --- WORKSPACE --- */
         .workspace { flex: 1; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; position: relative; }
@@ -78,28 +79,18 @@
         .view-pane.active { display: block; animation: fade 0.2s; }
         @keyframes fade { from{opacity:0}to{opacity:1} }
 
-        /* --- DASHBOARD --- */
+        /* --- DASHBOARD (KPIs + LISTE) --- */
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .kpi-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; }
         .kpi-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
         .kpi-num { font-size: 2rem; font-weight: 800; line-height: 1; }
         .kpi-sub { font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
-       
+
+        /* Couleurs KPI Spécifiques */
         .kpi-blue .kpi-num { color: var(--color-progress); }
         .kpi-green .kpi-num { color: var(--color-done); }
         .kpi-green .kpi-sub { color: var(--color-done); }
         .kpi-red .kpi-num { color: var(--color-late); }
-
-        /* STATS AREA */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .stat-box { background: #FAFAFA; border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
-        .stat-header { font-weight: 700; font-size: 0.95rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
-       
-        .stat-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 0.85rem; }
-        .stat-label { width: 120px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .stat-track { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; margin: 0 10px; overflow: hidden; }
-        .stat-fill { height: 100%; border-radius: 4px; }
-        .stat-val { width: 30px; text-align: right; font-weight: 700; }
 
         .section-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .section-header::before { content:''; width: 4px; height: 20px; background: var(--primary); border-radius: 2px; }
@@ -110,38 +101,25 @@
         td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover td { background: #f1f5f9; cursor: pointer; }
 
-        /* BADGES AUTO-COLORÉS (Projet & Admin) */
-        .badge-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; border: 1px solid rgba(0,0,0,0.05); }
-        .task-main { font-weight: 600; font-size: 0.95rem; display: block; margin-bottom: 4px; color: var(--text-main); }
-       
-        /* Agent + Badge Team (SOUS le nom) */
-        .agent-block { display: flex; flex-direction: column; align-items: flex-start; }
-        .agent-name { font-weight: 600; font-size: 0.9rem; }
-        .badge-team {
-            display: inline-block;
-            background: #1e293b; /* Couleur sombre Administration */
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-top: 3px;
-        }
+        .badge-team { display: inline-block; font-size: 0.7rem; font-weight: 700; background: var(--text-main); color: white; padding: 2px 8px; border-radius: 12px; margin-top: 4px; text-transform: uppercase; }
+        .badge-proj { display: inline-block; font-size: 0.7rem; font-weight: 600; background: #e0e7ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; }
 
-        /* --- GANTT STYLE (Refonte Look Image) --- */
+        /* --- GANTT STYLE (Inspiration Image) --- */
         .gantt-wrapper { overflow: auto; height: 100%; }
        
-        /* Overrides pour look "Clean" */
+        /* Overrides Frappe Gantt pour ressembler à l'image */
         .gantt .grid-header { background-color: #fff; height: 50px; }
         .gantt .grid-row { fill: #fff; }
         .gantt .grid-row:nth-child(even) { fill: #fcfcfc; }
         .gantt .row-line { stroke: #f1f5f9; }
-        .gantt .tick { stroke: #e2e8f0; font-size: 11px; }
+        .gantt .tick { stroke: #e2e8f0; }
+        .gantt .today-highlight { fill: #fef2f2; opacity: 0.5; }
        
-        /* Barres arrondies */
-        .gantt .bar { rx: 4px; ry: 4px; stroke: none; }
-        .gantt .bar-label { fill: #1e293b !important; font-weight: 600; font-size: 12px; transform: translateY(-1px); }
+        /* Les barres */
+        .gantt .bar-wrapper { cursor: pointer; }
+        .gantt .bar { fill: var(--prio-moyenne); rx: 4px; ry: 4px; } /* Arrondi */
+        .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; transform: translateY(-1px); }
+        .gantt .bar-progress { fill: rgba(0,0,0,0.15); }
        
         /* Couleurs Prio */
         .bar-critique .bar { fill: var(--prio-critique) !important; }
@@ -218,22 +196,11 @@
                 </div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-header">Répartition par Priorité</div>
-                    <div id="stats-prio"></div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-header">Charge par Administration</div>
-                    <div id="stats-team"></div>
-                </div>
-            </div>
-
             <div class="section-header">📅 Tâches à venir</div>
             <table>
                 <thead>
                     <tr>
-                        <th style="width:40%">Tâche & Projet</th>
+                        <th style="width:40%">Tâche</th>
                         <th style="width:30%">Responsable</th>
                         <th style="width:20%">Échéance</th>
                         <th style="width:10%">Statut</th>
@@ -354,18 +321,6 @@
         grist.ready({ requiredAccess: 'full' });
         grist.onRecords(async () => await load());
 
-        // --- GÉNÉRATEUR COULEURS AUTO ---
-        function getAutoColor(str) {
-            let hash=0; for(let i=0;i<str.length;i++) hash=str.charCodeAt(i)+((hash<<5)-hash);
-            const hue = Math.abs(hash % 360);
-            return `hsl(${hue}, 70%, 90%)`;
-        }
-        function getDarkAutoColor(str) {
-            let hash=0; for(let i=0;i<str.length;i++) hash=str.charCodeAt(i)+((hash<<5)-hash);
-            const hue = Math.abs(hash % 360);
-            return `hsl(${hue}, 70%, 30%)`;
-        }
-
         async function load() {
             updateStatus("Chargement...");
             try {
@@ -388,6 +343,7 @@
                     const ag = DATA.agents.find(x => x.id === t.Responsable) || { name: 'Non assigné', team: null };
                     const pr = DATA.projects.find(x => x.id === t.Projet) || { name: 'Aucun' };
                    
+                    // Couleur Gantt par priorité (Style image)
                     let cls = 'bar-basse';
                     if(t.Priorite === 'Critique') cls = 'bar-critique';
                     if(t.Priorite === 'Haute') cls = 'bar-haute';
@@ -439,31 +395,7 @@
             document.getElementById('kpi-rate').innerText = rate + "% Complété";
             document.getElementById('kpi-late').innerText = late;
 
-            // STATS PRIORITÉ
-            const pMap = { 'Critique':0, 'Haute':0, 'Moyenne':0, 'Basse':0 };
-            const pCols = { 'Critique':'#ef4444', 'Haute':'#f97316', 'Moyenne':'#3b82f6', 'Basse':'#94a3b8' };
-            tasks.forEach(t => { if(pMap[t.Priorite]!==undefined) pMap[t.Priorite]++; });
-            let htmlP = "";
-            for(const [k,v] of Object.entries(pMap)) {
-                if(v>0) {
-                    const pct = Math.round((v/total)*100);
-                    htmlP += `<div class="stat-row"><div class="stat-label">${k}</div><div class="stat-track"><div class="stat-fill" style="width:${pct}%;background:${pCols[k]}"></div></div><div class="stat-val">${v}</div></div>`;
-                }
-            }
-            document.getElementById('stats-prio').innerHTML = htmlP || "<p style='color:#999'>Aucune donnée</p>";
-
-            // STATS ADMIN
-            const tMap = {};
-            tasks.forEach(t => { const tm=t.agTeam||"Sans Admin"; tMap[tm]=(tMap[tm]||0)+1; });
-            let htmlT = "";
-            for(const [k,v] of Object.entries(tMap)) {
-                const pct = Math.round((v/total)*100);
-                const col = getDarkAutoColor(k);
-                htmlT += `<div class="stat-row"><div class="stat-label">${k}</div><div class="stat-track"><div class="stat-fill" style="width:${pct}%;background:${col}"></div></div><div class="stat-val">${v}</div></div>`;
-            }
-            document.getElementById('stats-team').innerHTML = htmlT || "<p style='color:#999'>Aucune donnée</p>";
-
-            // Liste Upcoming
+            // Liste Tâches à venir (Pas finies & date fin future)
             const today = new Date();
             const upcoming = tasks
                 .filter(t => t.progress < 100 && new Date(t.end) >= today)
@@ -473,14 +405,14 @@
             const tb = document.getElementById('dash-list');
             tb.innerHTML = "";
             upcoming.forEach(t => {
-                const badgeStyle = t.agTeam ? `style="background:${getAutoColor(t.agTeam)}; color:${getDarkAutoColor(t.agTeam)}"` : '';
-                const team = t.agTeam ? `<span class="badge-pill" ${badgeStyle}>${t.agTeam}</span>` : '';
-                const projStyle = `style="background:${getAutoColor(t.projName)}; color:${getDarkAutoColor(t.projName)}"`;
-               
+                const team = t.agTeam ? `<span class="badge-team">${t.agTeam}</span>` : '';
                 tb.innerHTML += `
                 <tr onclick="openModal('${t.id}')">
-                    <td><div class="task-main">${t.Titre}</div><span class="badge-pill" ${projStyle}>${t.projName}</span></td>
-                    <td><div class="agent-block"><span class="agent-name">${t.agName}</span>${team}</div></td>
+                    <td>
+                        <div style="font-weight:600">${t.Titre}</div>
+                        <span class="badge-proj">${t.projName}</span>
+                    </td>
+                    <td>${t.agName} <br>${team}</td>
                     <td>${t.end}</td>
                     <td><span style="color:var(--primary);font-weight:700">${t.progress}%</span></td>
                 </tr>`;
@@ -491,6 +423,8 @@
         function drawGantt(tasks) {
             document.getElementById('gantt-chart').innerHTML = "";
             if(!tasks.length) return;
+           
+            // Tri par projet pour lisibilité visuelle
             tasks.sort((a,b) => (a.projName > b.projName) ? 1 : -1);
 
             gantt = new Gantt("#gantt-chart", tasks, {
@@ -508,26 +442,37 @@
             const tb = document.getElementById('full-list');
             tb.innerHTML = "";
             tasks.forEach(t => {
-                const badgeStyle = t.agTeam ? `style="background:${getAutoColor(t.agTeam)}; color:${getDarkAutoColor(t.agTeam)}"` : '';
-                const team = t.agTeam ? `<span class="badge-pill" ${badgeStyle}>${t.agTeam}</span>` : '';
-                const projStyle = `style="background:${getAutoColor(t.projName)}; color:${getDarkAutoColor(t.projName)}"`;
-               
+                const team = t.agTeam ? `<span class="badge-team">${t.agTeam}</span>` : '';
+                // Couleur Prio
                 let pc = 'var(--text-muted)';
                 if(t.Priorite == 'Critique') pc = 'var(--prio-critique)';
                 if(t.Priorite == 'Haute') pc = 'var(--prio-haute)';
 
                 tb.innerHTML += `
                 <tr onclick="openModal('${t.id}')">
-                    <td><div class="task-main">${t.Titre}</div><span class="badge-pill" ${projStyle}>${t.projName}</span></td>
-                    <td><div class="agent-block"><span class="agent-name">${t.agName}</span>${team}</div></td>
+                    <td>
+                        <div style="font-weight:600">${t.Titre}</div>
+                        <span class="badge-proj">${t.projName}</span>
+                    </td>
+                    <td>
+                        <span style="font-weight:600">${t.agName}</span>
+                        <br>${team}
+                    </td>
                     <td>${t.end}</td>
                     <td style="color:${pc};font-weight:700;font-size:0.8rem">${t.Priorite||'Moyenne'}</td>
-                    <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px"><div style="width:${t.progress}%;height:100%;background:${t.progress==100?'#10b981':'var(--primary)'};border-radius:3px"></div></div><span style="font-size:0.75rem;font-weight:600">${t.progress}%</span></div></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px">
+                                <div style="width:${t.progress}%;height:100%;background:${t.progress==100?'#10b981':'var(--primary)'};border-radius:3px"></div>
+                            </div>
+                            <span style="font-size:0.75rem;font-weight:600">${t.progress}%</span>
+                        </div>
+                    </td>
                 </tr>`;
             });
         }
 
-        /* --- ACTIONS (FIXED BUG) --- */
+        /* --- ACTIONS --- */
         async function saveQC(type) {
             const name = document.getElementById('qc-'+type+'-name').value;
             if(!name) return;
@@ -535,7 +480,7 @@
             let table = '', fields = {};
             if(type=='proj') { table=DB.PROJECTS; fields={Nom_Projet:name}; }
             else if(type=='team') {
-                // FIX: On n'envoie PAS de couleur, Grist n'aime pas ça si la colonne n'existe pas
+                // CORRECTION BUG : On envoie juste le Nom, pas de couleur
                 table=DB.TEAMS; fields={Nom:name};
             }
             else if(type=='agent') {
@@ -545,7 +490,10 @@
             }
 
             await save('AddRecord', table, null, fields);
-            await load(); populateSelects(); closeAll();
+            // Recharger tout pour simplifier les liens
+            await load();
+            populateSelects();
+            closeAll();
         }
 
         document.getElementById('form-task').onsubmit = async (e) => {
@@ -573,7 +521,7 @@
 
         /* --- UI HELPERS --- */
         function openModal(id=null) {
-            if(id && typeof id === 'string') {
+            if(id && typeof id === 'string') { // Edit Task
                 const t = DATA.tasks.find(x => x.id == id);
                 document.getElementById('inp-id').value = t.id;
                 document.getElementById('inp-title').value = t.Titre;
@@ -584,7 +532,7 @@
                 document.getElementById('inp-prog').value = t.progress;
                 document.getElementById('inp-prio').value = t.Priorite;
                 document.getElementById('modal-task').style.display='flex';
-            } else {
+            } else { // New Task
                 document.getElementById('form-task').reset();
                 document.getElementById('inp-id').value = "";
                 const today = new Date().toISOString().split('T')[0];
