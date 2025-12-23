@@ -3,251 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pilotage Projets - État</title>
+    <title>L'Architecte V5</title>
    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    
     <style>
-        /* --- DESIGN SYSTEM --- */
         :root {
-            --primary: #4F46E5;    /* Indigo Moderne */
-            --secondary: #0F172A;  /* Slate Dark */
-            --bg-app: #F1F5F9;
+            /* Palette Pro & État Modernisé */
+            --primary: #000091;
+            --primary-light: #4F46E5;
+            --bg-body: #F3F4F6;
             --bg-surface: #FFFFFF;
-            --text-main: #334155;
-            --text-light: #64748B;
-            --border: #E2E8F0;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
            
             /* Status Colors */
-            --success: #10B981;
-            --warning: #F59E0B;
+            --todo: #64748B;
+            --progress: #2563EB;
+            --review: #F59E0B;
+            --done: #10B981;
             --danger: #EF4444;
-            --blue: #3B82F6;
 
-            /* Badges Teams Colors */
-            --badge-bg: #E0E7FF;
-            --badge-text: #3730A3;
-
-            /* Shadows & Radius */
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius: 12px;
+            /* UI variables */
+            --radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --trans: all 0.2s ease;
         }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-main); margin: 0; padding: 24px; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
+        * { box-sizing: border-box; outline: none; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* HEADER */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .app-logo { font-size: 1.5rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 10px; }
-        .app-logo span { color: var(--primary); }
-        .sync-pill { background: white; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--text-light); box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
-        .dot.ok { background: var(--success); }
-
-        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: center; }
-        .btn-add:hover { background: #4338ca; transform: translateY(-1px); }
-
-        /* NAVIGATION TABS */
-        .nav-container { display: flex; gap: 16px; margin-bottom: 24px; }
-        .nav-btn { background: transparent; border: none; font-size: 1rem; font-weight: 600; color: var(--text-light); padding: 8px 16px; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
-        .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .nav-btn:hover { color: var(--secondary); }
-       
-        /* FILTERS */
-        .filters { display: flex; gap: 12px; margin-left: auto; }
-        select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-main); cursor: pointer; }
-
-        /* MAIN CONTENT CARD */
-        .main-card { background: var(--bg-surface); border-radius: var(--radius); box-shadow: var(--shadow); flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-        .view-section { display: none; padding: 24px; overflow-y: auto; height: 100%; }
-        .view-section.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* KPI GRID */
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-box { padding: 20px; border-radius: 12px; background: #F8FAFC; border: 1px solid var(--border); }
-        .kpi-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; }
-        .kpi-value { font-size: 2rem; font-weight: 800; color: var(--secondary); }
-
-        /* TABLEAU TÂCHES */
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 16px; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--bg-app); }
-        td { padding: 16px; border-bottom: 1px solid var(--bg-app); vertical-align: middle; }
-        tr:hover td { background: #F8FAFC; cursor: pointer; }
-       
-        .task-title { font-weight: 600; font-size: 0.95rem; color: var(--secondary); }
-        .project-tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; color: var(--text-light); margin-top: 4px; }
-       
-        /* BADGES */
-        .badge-team {
-            display: inline-flex;
-            align-items: center;
-            background: var(--secondary); /* Fond sombre pour contraste */
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
-            margin-left: 8px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+        /* --- 1. TOP BAR (COMMAND CENTER) --- */
+        .topbar {
+            background: var(--bg-surface); border-bottom: 1px solid var(--border);
+            padding: 0 20px; height: 60px; display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0; z-index: 50;
         }
-
-        .progress-track { width: 100px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; margin-top: 4px; }
-        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
-
-        /* GANTT OPTIMISÉ */
-        .gantt-wrapper { overflow-x: auto; padding: 10px; }
-        .gantt .bar-label { fill: #333 !important; font-weight: 600; font-size: 12px; }
-        .gantt .bar-wrapper:hover .bar { opacity: 0.8; }
+        .brand { font-weight: 800; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .brand span { background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
        
-        /* Couleurs des barres Gantt */
-        .bar-critique .bar { fill: var(--danger) !important; }
-        .bar-haute .bar { fill: var(--warning) !important; }
-        .bar-moyenne .bar { fill: var(--blue) !important; }
-        .bar-termine .bar { fill: var(--success) !important; }
+        .view-switcher { display: flex; background: var(--bg-body); padding: 3px; border-radius: 6px; }
+        .view-btn {
+            border: none; background: transparent; padding: 6px 14px; font-size: 0.85rem; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: var(--trans);
+        }
+        .view-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
+        .view-btn:hover:not(.active) { color: var(--text-main); }
 
-        /* MODAL */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .modal { background: white; width: 500px; padding: 32px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .search-box {
+            position: relative;
+        }
+        .search-input {
+            padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.9rem; width: 250px; transition: var(--trans);
+        }
+        .search-input:focus { border-color: var(--primary-light); width: 300px; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted); }
+
+        .btn-new {
+            background: var(--primary); color: white; border: none; padding: 8px 16px;
+            border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            box-shadow: var(--shadow-sm); transition: var(--trans); display: flex; align-items: center; gap: 6px;
+        }
+        .btn-new:hover { background: var(--primary-light); transform: translateY(-1px); }
+
+        /* --- 2. MAIN LAYOUT --- */
+        .workspace { flex: 1; overflow: hidden; position: relative; }
+        .view-layer { position: absolute; inset: 0; padding: 20px; overflow-y: auto; display: none; }
+        .view-layer.active { display: block; animation: fadeUpdate 0.2s; }
+        @keyframes fadeUpdate { from { opacity: 0.8; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
+
+        /* --- VUE 1: LISTE (DATA GRID) --- */
+        .data-grid { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+        .data-grid thead { background: #F8FAFC; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        .data-grid th { text-align: left; padding: 12px 16px; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+        .data-grid td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: middle; }
+        .data-grid tr:hover { background: #F8FAFC; }
+       
+        .cell-title { font-weight: 600; color: var(--text-main); }
+        .cell-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .badge-pill { padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; background: #E0E7FF; color: var(--primary); }
+        .badge-team { background: #374151; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+
+        /* Inline Progress Bar */
+        .mini-progress { width: 80px; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+        .mini-fill { height: 100%; border-radius: 3px; }
+
+        /* --- VUE 2: KANBAN (BOARD) --- */
+        .kanban-board { display: flex; gap: 20px; height: 100%; overflow-x: auto; align-items: flex-start; }
+        .kanban-col {
+            flex: 0 0 300px; max-width: 300px; background: #F1F5F9;
+            border-radius: 12px; display: flex; flex-direction: column; max-height: 100%;
+        }
+        .col-header { padding: 16px; font-weight: 700; color: var(--text-muted); font-size: 0.85rem; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .col-count { background: rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+        .col-body { padding: 10px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+       
+        .kanban-card {
+            background: white; padding: 14px; border-radius: 8px; box-shadow: var(--shadow-sm);
+            border: 1px solid transparent; cursor: grab; transition: var(--trans);
+            position: relative;
+        }
+        .kanban-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--primary-light); }
+        .kanban-card:active { cursor: grabbing; }
+       
+        .card-tag { display: inline-block; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); background: #F3F4F6; padding: 2px 6px; border-radius: 4px; margin-bottom: 8px; }
+        .card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; line-height: 1.4; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F3F4F6; padding-top: 10px; }
+        .avatar-circle { width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.7rem; display: flex; justify-content: center; align-items: center; font-weight: 700; }
+
+        /* --- VUE 3: TEAM LOAD (RESSOURCES) --- */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .team-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .team-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .team-avatar-lg { width: 48px; height: 48px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; }
+        .load-bar-container { margin-top: 12px; }
+        .load-info { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; font-weight: 600; }
+        .load-track { height: 8px; background: #F3F4F6; border-radius: 4px; overflow: hidden; }
+        .load-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+
+        /* --- MODAL --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-panel { background: white; width: 500px; padding: 30px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
-        .modal h2 { margin: 0; font-size: 1.25rem; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
+        .modal-header h2 { margin: 0; font-size: 1.4rem; }
        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-family: inherit; }
-       
-        /* Quick Create Btn */
-        .btn-qc { width: 30px; border: 1px solid var(--border); background: #f8fafc; border-radius: 6px; cursor: pointer; color: var(--primary); font-size: 1.2rem; margin-left: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
 
-        /* Mobile */
-        @media (max-width: 768px) {
-            .header { flex-direction: column; align-items: flex-start; gap: 16px; }
-            .nav-container { overflow-x: auto; width: 100%; }
-            .filters { width: 100%; flex-wrap: wrap; }
-            select { flex: 1; }
-        }
+        /* UTILS */
+        .hidden { display: none; }
+        .text-red { color: var(--danger); }
+        .text-green { color: var(--done); }
+       
+        /* Drag Overlay (Visual feedback) */
+        .dragging { opacity: 0.5; transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <div class="app-logo"><span>⚡</span> PROJET MASTER</div>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <div class="sync-pill"><div class="dot" id="syncDot"></div> <span id="syncText">Connexion...</span></div>
-            <button class="btn-add" onclick="openModal()">+ Tâche</button>
+    <div class="topbar">
+        <div class="brand">
+            ⚡ PROJET MASTER <span>V5</span>
         </div>
-    </header>
-
-    <div style="display:flex; flex-wrap:wrap; align-items:center;">
-        <div class="nav-container">
-            <button class="nav-btn active" onclick="switchView('dashboard', this)">Tableau de Bord</button>
-            <button class="nav-btn" onclick="switchView('gantt', this)">Planning Gantt</button>
-        </div>
-        <div class="filters">
-            <select id="filterProject" onchange="refreshView()"><option value="">Tous les Projets</option></select>
-            <select id="filterAgent" onchange="refreshView()"><option value="">Tous les Agents</option></select>
-        </div>
-    </div>
-
-    <div class="main-card">
        
-        <div id="view-dashboard" class="view-section active">
-            <div class="kpi-row">
-                <div class="kpi-box">
-                    <div class="kpi-title">Tâches en Cours</div>
-                    <div class="kpi-value" style="color:var(--blue)" id="kpi-cours">0</div>
-                </div>
-                <div class="kpi-box">
-                    <div class="kpi-title">En Retard</div>
-                    <div class="kpi-value" style="color:var(--danger)" id="kpi-retard">0</div>
-                </div>
-                <div class="kpi-box">
-                    <div class="kpi-title">Total Tâches</div>
-                    <div class="kpi-value" id="kpi-total">0</div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom:20px;">Tâches Actives & En cours</h3>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 35%">Tâche & Projet</th>
-                            <th style="width: 25%">Responsable</th>
-                            <th style="width: 15%">Fin</th>
-                            <th style="width: 25%">Progression</th>
-                        </tr>
-                    </thead>
-                    <tbody id="taskListBody">
-                        </tbody>
-                </table>
-            </div>
+        <div class="view-switcher">
+            <button class="view-btn active" onclick="switchView('list')">Liste</button>
+            <button class="view-btn" onclick="switchView('kanban')">Kanban</button>
+            <button class="view-btn" onclick="switchView('team')">Équipe</button>
+            <button class="view-btn" onclick="switchView('gantt')">Gantt</button>
         </div>
 
-        <div id="view-gantt" class="view-section">
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:20px;">
-                <button class="btn-add" style="background:white; color:var(--text-main); border:1px solid var(--border); padding:6px 12px; font-size:0.8rem;" onclick="changeGanttMode('Day')">Jour</button>
-                <button class="btn-add" style="background:white; color:var(--text-main); border:1px solid var(--border); padding:6px 12px; font-size:0.8rem;" onclick="changeGanttMode('Week')">Semaine</button>
-                <button class="btn-add" style="background:white; color:var(--text-main); border:1px solid var(--border); padding:6px 12px; font-size:0.8rem;" onclick="changeGanttMode('Month')">Mois</button>
+        <div class="actions">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Rechercher (Ctrl+K)..." onkeyup="globalSearch(this.value)">
             </div>
-            <div id="gantt-chart" class="gantt-wrapper"></div>
+            <button class="btn-new" onclick="openModal()">
+                <span>+</span> Créer
+            </button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="taskModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modalTitle">Nouvelle Tâche</h2>
-                <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="workspace">
+       
+        <div id="view-list" class="view-layer active">
+            <table class="data-grid">
+                <thead>
+                    <tr>
+                        <th style="width:35%">Tâche / Projet</th>
+                        <th style="width:20%">Responsable</th>
+                        <th style="width:15%">Date Fin</th>
+                        <th style="width:20%">Statut & Avancement</th>
+                        <th style="width:10%">Priorité</th>
+                    </tr>
+                </thead>
+                <tbody id="listBody"></tbody>
+            </table>
+        </div>
+
+        <div id="view-kanban" class="view-layer">
+            <div class="kanban-board">
+                <div class="kanban-col" data-status="A faire">
+                    <div class="col-header">À FAIRE <span class="col-count" id="count-todo">0</span></div>
+                    <div class="col-body" id="col-todo" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
+                <div class="kanban-col" data-status="En cours">
+                    <div class="col-header">EN COURS <span class="col-count" id="count-prog">0</span></div>
+                    <div class="col-body" id="col-prog" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
+                <div class="kanban-col" data-status="En review">
+                    <div class="col-header">EN VALIDATION <span class="col-count" id="count-rev">0</span></div>
+                    <div class="col-body" id="col-rev" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
+                <div class="kanban-col" data-status="Terminé">
+                    <div class="col-header">TERMINÉ <span class="col-count" id="count-done">0</span></div>
+                    <div class="col-body" id="col-done" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                </div>
             </div>
-            <form id="taskForm">
+        </div>
+
+        <div id="view-team" class="view-layer">
+            <div class="team-grid" id="teamGrid"></div>
+        </div>
+
+        <div id="view-gantt" class="view-layer">
+            <div id="gantt-chart" style="background:white; padding:20px; border-radius:12px;"></div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="mainModal">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tâche</h2>
+                <button style="border:none; background:none; font-size:1.5rem; cursor:pointer" onclick="closeModal()">✕</button>
+            </div>
+            <form id="mainForm">
                 <input type="hidden" id="inpId">
-               
                 <div style="margin-bottom:16px;">
                     <label>Titre</label>
                     <input type="text" id="inpTitle" required>
                 </div>
-
-                <div class="form-grid">
-                    <div>
-                        <label>Projet</label>
-                        <div style="display:flex;">
-                            <select id="inpProject" required><option>Chargement...</option></select>
-                            <button type="button" class="btn-qc" onclick="alert('Fonctionnalité Quick Create active dans la version précédente.')">+</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label>Responsable</label>
-                        <div style="display:flex;">
-                            <select id="inpAgent"><option>Chargement...</option></select>
-                            <button type="button" class="btn-qc" onclick="alert('Fonctionnalité Quick Create active dans la version précédente.')">+</button>
-                        </div>
-                    </div>
+                <div class="form-row">
+                    <div><label>Projet</label><select id="inpProject" required></select></div>
+                    <div><label>Responsable</label><select id="inpAgent"></select></div>
                 </div>
-
-                <div class="form-grid">
+                <div class="form-row">
                     <div><label>Début</label><input type="date" id="inpStart" required></div>
                     <div><label>Fin</label><input type="date" id="inpEnd" required></div>
                 </div>
-
-                <div class="form-grid">
+                <div class="form-row">
                     <div><label>Avancement (%)</label><input type="number" id="inpProgress" min="0" max="100"></div>
-                    <div><label>Priorité</label>
-                        <select id="inpPriority">
-                            <option value="Basse">Basse</option>
-                            <option value="Moyenne" selected>Moyenne</option>
-                            <option value="Haute">Haute</option>
-                            <option value="Critique">Critique</option>
+                    <div><label>Statut</label>
+                        <select id="inpStatus">
+                            <option value="A faire">À faire</option>
+                            <option value="En cours">En cours</option>
+                            <option value="En review">En validation</option>
+                            <option value="Terminé">Terminé</option>
                         </select>
                     </div>
                 </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px;">
-                    <button type="button" class="btn-add" style="background:white; color:var(--text-main); border:1px solid var(--border);" onclick="closeModal()">Annuler</button>
-                    <button type="submit" class="btn-add">Enregistrer</button>
-                </div>
+                <button type="submit" class="btn-save">Enregistrer</button>
             </form>
         </div>
     </div>
@@ -256,269 +259,248 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
     <script>
-        // CONFIGURATION
+        // --- 1. CORE CONFIGURATION ---
         const DB = { TASKS: 'TACHES_MASTER', AGENTS: 'AGENTS', PROJECTS: 'PROJETS', TEAMS: 'EQUIPES' };
-        let appData = { tasks: [], agents: [], projects: [], teams: [] };
-        let ganttChart = null;
-        let currentGanttMode = 'Week';
+        let DATA = { tasks: [], agents: [], projects: [], teams: [] };
+        let filteredTasks = []; // Pour la recherche
+        let gantt = null;
 
-        // START
+        // --- 2. INIT ---
         grist.ready({ requiredAccess: 'full' });
-        grist.onRecords(async () => await loadData());
+        grist.onRecords(async () => await fetchAllData());
 
-        // LOAD DATA
-        async function loadData() {
-            updateStatus(false, "Chargement...");
+        async function fetchAllData() {
             try {
-                const [rTasks, rAgents, rProjects, rTeams] = await Promise.all([
+                // Fetch parallèle pour max performance
+                const [rT, rA, rP, rEq] = await Promise.all([
                     grist.docApi.fetchTable(DB.TASKS),
                     grist.docApi.fetchTable(DB.AGENTS),
                     grist.docApi.fetchTable(DB.PROJECTS),
                     grist.docApi.fetchTable(DB.TEAMS)
                 ]);
 
-                // 1. Process Teams
-                appData.teams = convert(rTeams).map(t => ({ id: t.id, name: t.Nom || t.Nom_Equipe || "N/A" }));
-
-                // 2. Process Agents
-                appData.agents = convert(rAgents).map(a => {
-                    const team = appData.teams.find(t => t.id === a.Equipe);
-                    return {
-                        id: a.id,
-                        name: a.Nom_Complet || a.Nom,
-                        teamName: team ? team.name : null
-                    };
+                // Mapping intelligent (Jointures)
+                DATA.teams = mapTable(rEq, r => ({ id: r.id, name: r.Nom || r.Nom_Equipe }));
+                DATA.projects = mapTable(rP, r => ({ id: r.id, name: r.Nom_Projet || r.Nom }));
+               
+                DATA.agents = mapTable(rA, r => {
+                    const t = DATA.teams.find(tm => tm.id === r.Equipe);
+                    return { id: r.id, name: r.Nom_Complet || r.Nom, team: t ? t.name : 'N/A' };
                 });
 
-                // 3. Process Projects
-                appData.projects = convert(rProjects).map(p => ({ id: p.id, name: p.Nom_Projet || p.Nom }));
-
-                // 4. Process Tasks (LOGIQUE DE GROUPE POUR GANTT)
-                const rawTasks = convert(rTasks);
-               
-                appData.tasks = rawTasks.map(t => {
-                    const agent = appData.agents.find(a => a.id === t.Responsable) || {name: 'Non assigné', teamName: null};
-                    const project = appData.projects.find(p => p.id === t.Projet) || {name: 'Sans Projet'};
-                    const isLate = new Date(t.Date_Fin) < new Date() && t.Avancement < 100;
-
-                    let color = 'bar-moyenne';
-                    if(t.Avancement === 100) color = 'bar-termine';
-                    else if(t.Priorite === 'Critique' || isLate) color = 'bar-critique';
-                    else if(t.Priorite === 'Haute') color = 'bar-haute';
+                DATA.tasks = mapTable(rT, t => {
+                    const ag = DATA.agents.find(a => a.id === t.Responsable) || {name: 'Inconnu', team: ''};
+                    const pr = DATA.projects.find(p => p.id === t.Projet) || {name: 'Aucun'};
+                   
+                    // Calcul automatique du statut si manquant
+                    let status = t.Statut || 'A faire';
+                    if(t.Avancement === 100) status = 'Terminé';
+                    else if(t.Avancement > 0 && status === 'A faire') status = 'En cours';
 
                     return {
                         ...t, id: t.id.toString(),
-                        displayAgent: agent.name,
-                        displayTeam: agent.teamName, // <-- Badge Data
-                        displayProject: project.name,
-                        // Gantt fields
-                        name: t.Titre,
-                        start: formatDate(t.Date_Debut),
-                        end: formatDate(t.Date_Fin),
-                        progress: t.Avancement || 0,
-                        dependencies: t.Dependances || "",
-                        custom_class: color
+                        agentName: ag.name, teamName: ag.team, projectName: pr.name,
+                        status: status, // Champ calculé ou brut
+                        // Gantt format
+                        name: t.Titre, start: fmtDate(t.Date_Debut), end: fmtDate(t.Date_Fin),
+                        progress: t.Avancement || 0, dependencies: t.Dependances || ""
                     };
                 });
 
-                // TRI POUR LE GANTT : Grouper par Projet, puis par Date
-                appData.tasks.sort((a, b) => {
-                    if (a.displayProject < b.displayProject) return -1;
-                    if (a.displayProject > b.displayProject) return 1;
-                    return new Date(a.start) - new Date(b.start); // Waterfall
-                });
+                filteredTasks = [...DATA.tasks]; // Init filtre
+                renderAll(); // Tout dessiner
 
-                refreshView();
-                updateStatus(true, "Synchronisé");
-            } catch (e) {
-                console.error(e);
-                updateStatus(false, "Erreur Sync");
-            }
+            } catch(e) { console.error("Erreur Sync:", e); }
         }
 
-        // REFRESH
-        function refreshView() {
+        // --- 3. RENDERING ENGINE ---
+        function renderAll() {
             populateSelects();
-            const fProj = document.getElementById('filterProject').value;
-            const fAgent = document.getElementById('filterAgent').value;
-           
-            const filtered = appData.tasks.filter(t =>
-                (fProj === "" || t.Projet == fProj) && (fAgent === "" || t.Responsable == fAgent)
-            );
-
-            renderDashboard(filtered);
-            renderGantt(filtered);
+            renderList();
+            renderKanban();
+            renderTeamLoad();
+            renderGantt();
         }
 
-        // DASHBOARD RENDER
-        function renderDashboard(tasks) {
-            // Stats
-            document.getElementById('kpi-total').innerText = tasks.length;
-            document.getElementById('kpi-retard').innerText = tasks.filter(t => new Date(t.end) < new Date() && t.progress < 100).length;
-            document.getElementById('kpi-cours').innerText = tasks.filter(t => t.progress > 0 && t.progress < 100).length;
-
-            // Liste (Triée par avancement : En cours d'abord)
-            const sortedTasks = [...tasks].sort((a, b) => {
-                // Prioriser ceux qui sont entre 1 et 99%
-                const aActive = a.progress > 0 && a.progress < 100 ? 1 : 0;
-                const bActive = b.progress > 0 && b.progress < 100 ? 1 : 0;
-                return bActive - aActive;
-            });
-
-            const tbody = document.getElementById('taskListBody');
-            tbody.innerHTML = "";
-           
-            if(sortedTasks.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px; color:#999'>Aucune tâche</td></tr>";
-                return;
-            }
-
-            sortedTasks.forEach(t => {
-                // BADGE EQUIPE FORCE
-                const teamBadge = t.displayTeam
-                    ? `<span class="badge-team">${t.displayTeam}</span>`
-                    : '';
+        // VUE 1 : LISTE OPTIMISÉE
+        function renderList() {
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = filteredTasks.map(t => {
+                const badgeClass = t.status === 'Terminé' ? 'text-green' : (t.status === 'En cours' ? 'text-blue' : '');
+                const isLate = new Date(t.end) < new Date() && t.progress < 100;
                
-                // COULEUR BARRE
-                let barColor = 'var(--blue)';
-                if(t.progress === 100) barColor = 'var(--success)';
-                else if(new Date(t.end) < new Date()) barColor = 'var(--danger)';
+                return `
+                <tr onclick="editTask(${t.id})">
+                    <td>
+                        <div class="cell-title">${t.Titre}</div>
+                        <div class="cell-sub"><span class="badge-pill">${t.projectName}</span></div>
+                    </td>
+                    <td>
+                        <div class="cell-title">${t.agentName}</div>
+                        <div class="cell-sub">${t.teamName ? `<span class="badge-team">${t.teamName}</span>` : ''}</div>
+                    </td>
+                    <td style="${isLate ? 'color:var(--danger); font-weight:700' : ''}">${t.end}</td>
+                    <td>
+                        <div style="display:flex; align-items:center;">
+                            <div class="mini-progress"><div class="mini-fill" style="width:${t.progress}%; background:${getColor(t.progress)}"></div></div>
+                            <span style="font-size:0.8rem; font-weight:600 ${badgeClass}">${t.status}</span>
+                        </div>
+                    </td>
+                    <td>${t.Priorite || 'Moyenne'}</td>
+                </tr>`;
+            }).join('');
+        }
 
-                const tr = document.createElement('tr');
-                tr.onclick = () => openModal(t);
-                tr.innerHTML = `
-                    <td>
-                        <div class="task-title">${t.Titre}</div>
-                        <div class="project-tag">${t.displayProject}</div>
-                    </td>
-                    <td>
-                        ${t.displayAgent}
-                        ${teamBadge}
-                    </td>
-                    <td style="font-size:0.85rem">${t.end}</td>
-                    <td>
-                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:2px;">
-                            <span>${t.progress}%</span>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width:${t.progress}%; background:${barColor}"></div>
-                        </div>
-                    </td>
+        // VUE 2 : KANBAN DRAG & DROP
+        function renderKanban() {
+            // Reset colonnes
+            ['todo', 'prog', 'rev', 'done'].forEach(c => {
+                document.getElementById(`col-${c}`).innerHTML = '';
+                document.getElementById(`count-${c}`).innerText = '0';
+            });
+
+            const map = { 'A faire': 'todo', 'En cours': 'prog', 'En review': 'rev', 'Terminé': 'done' };
+
+            filteredTasks.forEach(t => {
+                const colKey = map[t.status] || 'todo';
+                const card = document.createElement('div');
+                card.className = 'kanban-card';
+                card.draggable = true;
+                card.ondragstart = (e) => drag(e, t.id);
+                card.onclick = () => editTask(t.id);
+               
+                card.innerHTML = `
+                    <div class="card-tag">${t.projectName}</div>
+                    <div class="card-title">${t.Titre}</div>
+                    <div class="card-footer">
+                        <div class="avatar-circle">${t.agentName.substring(0,2).toUpperCase()}</div>
+                        <span style="font-size:0.7rem; font-weight:700; color:${getColor(t.progress)}">${t.progress}%</span>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+               
+                document.getElementById(`col-${colKey}`).appendChild(card);
+                // Update compteur
+                const countEl = document.getElementById(`count-${colKey}`);
+                countEl.innerText = parseInt(countEl.innerText) + 1;
             });
         }
 
-        // GANTT RENDER
-        function renderGantt(tasks) {
-            const container = document.getElementById("gantt-chart");
-            container.innerHTML = "";
-            if(tasks.length === 0) {
-                container.innerHTML = "<p style='text-align:center; padding:20px'>Rien à afficher</p>";
-                return;
-            }
+        // VUE 3 : TEAM LOAD
+        function renderTeamLoad() {
+            const grid = document.getElementById('teamGrid');
+            grid.innerHTML = DATA.agents.map(ag => {
+                const myTasks = DATA.tasks.filter(t => t.Responsable === ag.id && t.progress < 100);
+                const count = myTasks.length;
+                const loadPercent = Math.min(count * 20, 100); // 5 tâches = 100% load (arbitraire)
+                const loadColor = count > 4 ? 'var(--danger)' : (count > 2 ? 'var(--review)' : 'var(--done)');
 
-            // Frappe Gantt a besoin de "custom_class" pour les couleurs
-            // On a déjà trié 'tasks' par Projet dans loadData
-            ganttChart = new Gantt("#gantt-chart", tasks, {
-                header_height: 50,
-                column_width: 30,
-                step: 24,
+                return `
+                <div class="team-card">
+                    <div class="team-header">
+                        <div class="team-avatar-lg">${ag.name.charAt(0)}</div>
+                        <div>
+                            <div style="font-weight:700">${ag.name}</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted)">${ag.team}</div>
+                        </div>
+                        <div style="margin-left:auto; font-size:1.5rem; font-weight:800; color:${loadColor}">${count}</div>
+                    </div>
+                    <div class="load-bar-container">
+                        <div class="load-info"><span>Charge</span><span>${loadPercent}%</span></div>
+                        <div class="load-track"><div class="load-fill" style="width:${loadPercent}%; background:${loadColor}"></div></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // VUE 4 : GANTT
+        function renderGantt() {
+            const el = document.getElementById('gantt-chart');
+            el.innerHTML = '';
+            if(filteredTasks.length === 0) return;
+
+            // Sort by Project then Date
+            const sorted = [...filteredTasks].sort((a,b) => (a.projectName > b.projectName ? 1 : -1));
+
+            gantt = new Gantt("#gantt-chart", sorted, {
+                header_height: 50, column_width: 30, step: 24,
                 view_modes: ['Day', 'Week', 'Month'],
-                bar_height: 25,
-                bar_corner_radius: 4,
-                arrow_curve: 5,
-                padding: 18,
-                view_mode: currentGanttMode,
-                date_format: 'YYYY-MM-DD',
-                language: 'fr',
-                on_click: task => openModal(task),
-                on_date_change: (task, start, end) => save('UpdateRecord', task.id, { Date_Debut: formatDate(start), Date_Fin: formatDate(end) }),
-                on_progress_change: (task, progress) => save('UpdateRecord', task.id, { Avancement: progress })
+                bar_height: 25, bar_corner_radius: 4, arrow_curve: 5, padding: 18,
+                view_mode: 'Week', date_format: 'YYYY-MM-DD', language: 'fr',
+                on_click: t => editTask(t.id),
+                on_date_change: (t, s, e) => saveAction('UpdateRecord', t.id, { Date_Debut: fmtDate(s), Date_Fin: fmtDate(e) }),
+                on_progress_change: (t, p) => saveAction('UpdateRecord', t.id, { Avancement: p })
             });
         }
 
-        function changeGanttMode(mode) {
-            currentGanttMode = mode;
-            if(ganttChart) ganttChart.change_view_mode(mode);
+        // --- 4. INTERACTIONS (Drag & Drop, Search) ---
+       
+        // Search
+        window.globalSearch = (val) => {
+            val = val.toLowerCase();
+            filteredTasks = DATA.tasks.filter(t =>
+                t.Titre.toLowerCase().includes(val) ||
+                t.agentName.toLowerCase().includes(val) ||
+                t.projectName.toLowerCase().includes(val)
+            );
+            renderAll();
+        };
+
+        // Drag & Drop Kanban
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev, id) { ev.dataTransfer.setData("text", id); }
+        function drop(ev) {
+            ev.preventDefault();
+            const id = ev.dataTransfer.getData("text");
+            // Trouver la colonne cible
+            let target = ev.target;
+            while (!target.classList.contains('kanban-col')) { target = target.parentElement; }
+            const newStatus = target.getAttribute('data-status');
+           
+            // Optimistic UI update
+            const task = DATA.tasks.find(t => t.id == id);
+            if(task && task.status !== newStatus) {
+                task.status = newStatus;
+                // Si Terminé -> 100%, sinon garder
+                const updates = { Statut: newStatus }; // Supposant que vous avez une colonne Statut texte
+                if(newStatus === 'Terminé') updates.Avancement = 100;
+               
+                saveAction('UpdateRecord', id, updates);
+                renderKanban(); // Refresh instantané
+            }
         }
 
-        // ACTIONS
-        async function save(action, rowId, fields) {
-            updateStatus(false, "Sauvegarde...");
+        // --- 5. CORE UTILS ---
+        async function saveAction(action, rowId, fields) {
             const args = action === 'AddRecord' ? [null, fields] : [parseInt(rowId), fields];
-            try {
-                await grist.docApi.applyUserActions([[action, DB.TASKS, ...args]]);
-            } catch (e) {
-                alert("Erreur: " + e.message);
-                updateStatus(false, "Erreur");
-            }
+            try { await grist.docApi.applyUserActions([[action, DB.TASKS, ...args]]); }
+            catch(e) { alert(e.message); }
         }
 
-        // UTILS
-        function updateStatus(ok, msg) {
-            document.getElementById('syncDot').className = ok ? 'dot ok' : 'dot';
-            document.getElementById('syncText').innerText = msg;
+        function editTask(id) {
+            const t = DATA.tasks.find(x => x.id == id);
+            if(!t) return;
+            document.getElementById('modalTitle').innerText = "Modifier Tâche";
+            document.getElementById('inpId').value = t.id;
+            document.getElementById('inpTitle').value = t.Titre;
+            document.getElementById('inpProject').value = t.Projet;
+            document.getElementById('inpAgent').value = t.Responsable;
+            document.getElementById('inpStart').value = t.start;
+            document.getElementById('inpEnd').value = t.end;
+            document.getElementById('inpProgress').value = t.progress;
+            document.getElementById('inpStatus').value = t.status;
+            openModalWindow();
         }
 
-        function convert(table) {
-            const keys = Object.keys(table);
-            if(keys.length === 0) return [];
-            const res = [];
-            for(let i=0; i<table.id.length; i++) {
-                let obj = {}; keys.forEach(k => obj[k] = table[k][i]); res.push(obj);
-            }
-            return res;
+        function openModal() {
+            // Reset for new
+            if(!document.getElementById('inpId').value) document.getElementById('mainForm').reset();
+            openModalWindow();
         }
        
-        function populateSelects() {
-            const fill = (sel, list) => {
-                const el = document.querySelector(sel);
-                const val = el.value;
-                el.innerHTML = el.options[0].outerHTML;
-                list.forEach(i => {
-                    const opt = document.createElement('option');
-                    opt.value = i.id; opt.innerText = i.name; el.appendChild(opt);
-                });
-                if(list.some(i=>i.id==val)) el.value = val;
-            };
-            fill('#filterProject', appData.projects); fill('#inpProject', appData.projects);
-            fill('#filterAgent', appData.agents); fill('#inpAgent', appData.agents);
-        }
+        function openModalWindow() { document.getElementById('mainModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('mainModal').style.display = 'none'; document.getElementById('inpId').value = ''; }
 
-        function formatDate(v) {
-            if(!v) return new Date().toISOString().split('T')[0];
-            const d = typeof v === 'number' ? new Date(v*1000) : new Date(v);
-            return d.toISOString().split('T')[0];
-        }
-
-        // MODAL LOGIC
-        const modal = document.getElementById('taskModal');
-        function openModal(t=null) {
-            const f = document.getElementById('taskForm');
-            if(t) {
-                document.getElementById('modalTitle').innerText = "Modifier Tâche";
-                document.getElementById('inpId').value = t.id;
-                document.getElementById('inpTitle').value = t.Titre;
-                document.getElementById('inpProject').value = t.Projet;
-                document.getElementById('inpAgent').value = t.Responsable;
-                document.getElementById('inpStart').value = t.start;
-                document.getElementById('inpEnd').value = t.end;
-                document.getElementById('inpProgress').value = t.progress;
-                document.getElementById('inpPriority').value = t.Priorite;
-            } else {
-                f.reset();
-                document.getElementById('modalTitle').innerText = "Nouvelle Tâche";
-                document.getElementById('inpId').value = "";
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('inpStart').value = today;
-                document.getElementById('inpEnd').value = today;
-            }
-            modal.style.display = 'flex';
-        }
-        function closeModal() { modal.style.display = 'none'; }
-       
-        document.getElementById('taskForm').onsubmit = e => {
+        document.getElementById('mainForm').onsubmit = e => {
             e.preventDefault();
             const id = document.getElementById('inpId').value;
             const data = {
@@ -528,21 +510,34 @@
                 Date_Debut: document.getElementById('inpStart').value,
                 Date_Fin: document.getElementById('inpEnd').value,
                 Avancement: parseInt(document.getElementById('inpProgress').value),
-                Priorite: document.getElementById('inpPriority').value
+                // Statut: document.getElementById('inpStatus').value // Si vous avez cette colonne
             };
-            save(id?'UpdateRecord':'AddRecord', id, data);
+            saveAction(id ? 'UpdateRecord' : 'AddRecord', id, data);
             closeModal();
         };
 
-        function switchView(v, btn) {
-            document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
-            document.getElementById('view-'+v).classList.add('active');
-            btn.classList.add('active');
-            if(v==='gantt' && ganttChart) setTimeout(()=>ganttChart.refresh(appData.tasks), 50);
+        // Helpers
+        function switchView(v) {
+            document.querySelectorAll('.view-layer').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.view-btn').forEach(e => e.classList.remove('active'));
+            document.getElementById(`view-${v}`).classList.add('active');
+            // Trouver le bouton correspondant est complexe ici, on simplifie
+            if(v==='gantt' && gantt) setTimeout(()=>gantt.refresh(filteredTasks), 50);
         }
-
-        window.onclick = e => { if(e.target==modal) closeModal(); }
+        function mapTable(t, fn) { const k=Object.keys(t); if(!k.length) return []; const r=[]; for(let i=0; i<t.id.length; i++){ let o={}; k.forEach(key=>o[key]=t[key][i]); r.push(fn(o)); } return r; }
+        function fmtDate(v) { if(!v) return new Date().toISOString().split('T')[0]; const d = typeof v==='number'?new Date(v*1000):new Date(v); return d.toISOString().split('T')[0]; }
+        function getColor(p) { return p==100 ? 'var(--done)' : (p>0 ? 'var(--progress)' : 'var(--todo)'); }
+        function populateSelects() {
+            const fill = (id, list) => {
+                const el = document.getElementById(id);
+                const v = el.value; el.innerHTML = el.options[0].outerHTML;
+                list.forEach(i => { const o = document.createElement('option'); o.value=i.id; o.innerText=i.name; el.appendChild(o); });
+                if(list.some(i=>i.id==v)) el.value=v;
+            };
+            fill('inpProject', DATA.projects); fill('inpAgent', DATA.agents);
+        }
+       
+        window.onclick = e => { if(e.target == document.getElementById('mainModal')) closeModal(); }
     </script>
 </body>
 </html>
