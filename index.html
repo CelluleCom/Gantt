@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP - Pilotage</title>
+    <title>Gantt'FIP - Pilotage V8</title>
    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    
     <style>
-        /* --- 1. DESIGN SYSTEM (Morphotype V6 conservé) --- */
+        /* --- 1. DESIGN SYSTEM (Morphotype V7 conservé) --- */
         :root {
             --primary: #000091;       /* Bleu France */
             --primary-light: #5252a8;
@@ -68,7 +68,7 @@
         .tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         .filter-group { margin-left: auto; display: flex; gap: 12px; }
-        select.filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-btn); cursor: pointer; min-width: 180px; }
+        select.filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-btn); cursor: pointer; min-width: 160px; }
 
         /* --- WORKSPACE --- */
         .workspace {
@@ -80,24 +80,29 @@
         .view-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- VUE 1 : DASHBOARD (Focus Avancement) --- */
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: #F8FAFC; padding: 24px; border-radius: var(--radius-box); border: 1px solid var(--border); }
+        /* --- VUE 1 : TABLEAU DE BORD (NOUVEAU) --- */
+        .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: #F8FAFC; padding: 24px; border-radius: var(--radius-box); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
         .kpi-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
         .kpi-val { font-size: 2.2rem; font-weight: 800; color: var(--text-main); }
+       
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .dash-box { border: 1px solid var(--border); border-radius: var(--radius-box); padding: 20px; }
+        .dash-title { font-weight: 700; font-size: 1rem; margin-bottom: 15px; border-bottom: 2px solid var(--bg-body); padding-bottom: 10px; }
 
-        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .section-title::before { content: ''; width: 4px; height: 20px; background: var(--primary); border-radius: 2px; display: block; }
+        /* Stats Bars */
+        .stat-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+        .stat-bar-bg { flex: 1; height: 8px; background: #eee; margin: 0 15px; border-radius: 4px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; }
 
         /* --- VUE 2 : GANTT (Refonte Lisibilité) --- */
         .gantt-container { overflow-x: auto; padding-bottom: 50px; }
        
-        /* CORRECTIF LISIBILITÉ CALENDRIER */
-        .gantt .grid-header { background-color: #ffffff; height: 60px; }
-        .gantt .grid-header .tick { stroke: #e2e8f0; stroke-width: 1; }
-        .gantt .grid-header .upper-text { font-size: 14px; font-weight: 700; fill: var(--primary); }
-        .gantt .grid-header .lower-text { font-size: 11px; fill: #64748b; }
-        .gantt .bar-label { fill: #1e293b !important; font-weight: 600; font-size: 12px; }
+        /* CSS Force pour lisibilité Gantt */
+        .gantt .grid-header { height: 60px; background-color: #fff; }
+        .gantt .grid-row { fill: #fff; }
+        .gantt .grid-row:nth-child(even) { fill: #f9f9f9; }
+        .gantt .bar-label { fill: #1e293b !important; font-weight: 600; font-size: 13px; }
        
         /* Barres Prio */
         .bar-critique .bar { fill: var(--prio-critique) !important; }
@@ -115,43 +120,36 @@
         .data-table td { padding: 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
         .data-table tr:hover td { background: #F8FAFC; cursor: pointer; }
 
-        /* CELLULE RESPONSABLE (Mise en forme verticale) */
-        .agent-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+        /* Styles Spécifiques Liste */
+        .agent-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
         .agent-name { font-weight: 600; color: var(--text-main); font-size: 0.95rem; }
        
-        .badge-team {
+        /* BADGE ÉQUIPE & PROJET (COULEUR AUTO) */
+        .badge-pill {
             display: inline-block;
-            background: #1e293b; /* Noir/Bleu foncé "Administration" */
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            padding: 3px 10px; border-radius: 12px;
+            font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: #1e293b; /* Texte sombre par défaut */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .task-main { font-weight: 600; color: var(--primary); font-size: 1rem; margin-bottom: 4px; }
-        .project-sub { font-size: 0.8rem; color: var(--text-muted); background: #F1F5F9; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+        .task-main { font-weight: 600; color: var(--primary); font-size: 1rem; margin-bottom: 6px; }
+       
+        /* Barre progression liste */
+        .prog-container { width: 100%; height: 6px; background: #E2E8F0; border-radius: 4px; overflow: hidden; display: flex; margin-top: 5px; }
+        .prog-bar { height: 100%; transition: width 0.5s; }
 
         /* --- MODALS --- */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-card { background: white; width: 600px; max-width: 95%; padding: 35px; border-radius: var(--radius-box); box-shadow: 0 20px 40px rgba(0,0,0,0.2); border-top: 5px solid var(--primary); }
         .modal-card.mini { width: 400px; border-top-color: var(--accent); }
-       
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .modal-title { font-size: 1.4rem; font-weight: 800; margin: 0; }
-       
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; }
-       
         .input-with-action { display: flex; gap: 8px; }
         .input-with-action select { flex: 1; }
         .btn-plus { width: 40px; background: #EFF6FF; color: var(--primary); border: 1px solid #BFDBFE; border-radius: var(--radius-btn); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-       
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-btn); font-family: inherit; }
-       
         .modal-footer { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
         .btn-cancel { background: transparent; border: none; font-weight: 600; color: var(--text-muted); cursor: pointer; }
         .btn-save { background: var(--primary); color: white; border: none; padding: 10px 30px; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer; }
@@ -170,12 +168,13 @@
 
     <div class="toolbar-wrapper">
         <div class="view-tabs">
-            <button class="tab-btn active" onclick="switchView('dashboard', this)">Dashboard</button>
+            <button class="tab-btn active" onclick="switchView('dashboard', this)">Tableau de Bord</button>
             <button class="tab-btn" onclick="switchView('gantt', this)">Planning Gantt</button>
             <button class="tab-btn" onclick="switchView('list', this)">Liste</button>
         </div>
         <div class="filter-group">
             <select class="filter-select" id="filterProject" onchange="refreshData()"><option value="">Tous les Projets</option></select>
+            <select class="filter-select" id="filterTeam" onchange="refreshData()"><option value="">Toutes les Admin.</option></select>
             <select class="filter-select" id="filterAgent" onchange="refreshData()"><option value="">Tous les Agents</option></select>
         </div>
     </div>
@@ -185,53 +184,50 @@
         <div id="view-dashboard" class="view-content active">
             <div class="kpi-row">
                 <div class="kpi-card">
-                    <div class="kpi-label">Tâches en Cours</div>
-                    <div class="kpi-val" style="color:var(--primary)" id="kpi-cours">0</div>
+                    <div class="kpi-label">Taux d'Achèvement</div>
+                    <div class="kpi-val" style="color:var(--primary)" id="kpi-completion">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Critiques / Retard</div>
-                    <div class="kpi-val" style="color:var(--accent)" id="kpi-retard">0</div>
+                    <div class="kpi-label">Tâches en Retard</div>
+                    <div class="kpi-val" style="color:var(--prio-critique)" id="kpi-retard">0</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Total Projets</div>
+                    <div class="kpi-label">Total Tâches</div>
                     <div class="kpi-val" id="kpi-total">0</div>
                 </div>
             </div>
 
-            <h3 class="section-title">Focus : Tâches Actives</h3>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th style="width: 40%">Tâche</th>
-                        <th style="width: 25%">Responsable (Admin)</th>
-                        <th style="width: 15%">Fin</th>
-                        <th style="width: 20%">Avancement</th>
-                    </tr>
-                </thead>
-                <tbody id="dashBody"></tbody>
-            </table>
+            <div class="dashboard-grid">
+                <div class="dash-box">
+                    <div class="dash-title">Répartition par Priorité</div>
+                    <div id="stats-prio"></div>
+                </div>
+               
+                <div class="dash-box">
+                    <div class="dash-title">Charge par Administration</div>
+                    <div id="stats-team"></div>
+                </div>
+            </div>
         </div>
 
         <div id="view-gantt" class="view-content">
             <div class="gantt-controls">
-                <span style="align-self:center; font-weight:600; font-size:0.9rem; margin-right:10px;">Zoom :</span>
-                <button class="btn-zoom" onclick="changeGanttMode('Day', this)">Jour</button>
-                <button class="btn-zoom active" onclick="changeGanttMode('Week', this)">Semaine</button>
+                <span style="align-self:center; font-weight:600; font-size:0.9rem; margin-right:10px;">Vue :</span>
+                <button class="btn-zoom active" onclick="changeGanttMode('Week', this)">Semaine (S)</button>
                 <button class="btn-zoom" onclick="changeGanttMode('Month', this)">Mois</button>
             </div>
             <div id="gantt-chart" class="gantt-container"></div>
         </div>
 
         <div id="view-list" class="view-content">
-            <h3 class="section-title">Inventaire Complet</h3>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 35%">Projet & Tâche</th>
+                        <th style="width: 35%">Tâche & Projet</th>
                         <th style="width: 20%">Responsable</th>
-                        <th style="width: 15%">Échéance</th>
+                        <th style="width: 15%">Fin</th>
                         <th style="width: 15%">Priorité</th>
-                        <th style="width: 15%">État</th>
+                        <th style="width: 15%">Progression</th>
                     </tr>
                 </thead>
                 <tbody id="listBody"></tbody>
@@ -243,14 +239,14 @@
     <div class="modal-overlay" id="modalTask">
         <div class="modal-card">
             <div class="modal-header">
-                <h2 class="modal-title" id="modalTaskTitle">Tâche</h2>
+                <h2 style="margin:0">Tâche</h2>
                 <button onclick="closeModals()" style="border:none;background:none;font-size:2rem;cursor:pointer;">&times;</button>
             </div>
             <form id="formTask">
                 <input type="hidden" id="taskId">
                 <div style="margin-bottom:20px;">
                     <label>Titre de la tâche</label>
-                    <input type="text" id="taskTitle" required placeholder="Ex: Cadrage...">
+                    <input type="text" id="taskTitle" required>
                 </div>
                
                 <div class="form-grid">
@@ -258,14 +254,14 @@
                         <label>Projet</label>
                         <div class="input-with-action">
                             <select id="taskProject" required><option>Chargement...</option></select>
-                            <button type="button" class="btn-plus" onclick="openQuickCreate('Project')" title="Créer Projet">+</button>
+                            <button type="button" class="btn-plus" onclick="openQuickCreate('Project')">+</button>
                         </div>
                     </div>
                     <div>
                         <label>Responsable</label>
                         <div class="input-with-action">
                             <select id="taskAgent"><option>Chargement...</option></select>
-                            <button type="button" class="btn-plus" onclick="openQuickCreate('Agent')" title="Créer Agent">+</button>
+                            <button type="button" class="btn-plus" onclick="openQuickCreate('Agent')">+</button>
                         </div>
                     </div>
                 </div>
@@ -280,10 +276,10 @@
                     <div>
                         <label>Priorité</label>
                         <select id="taskPrio">
-                            <option value="Basse">Basse (Gris)</option>
-                            <option value="Moyenne" selected>Moyenne (Bleu)</option>
-                            <option value="Haute">Haute (Orange)</option>
-                            <option value="Critique">Critique (Rouge)</option>
+                            <option value="Basse">Basse</option>
+                            <option value="Moyenne" selected>Moyenne</option>
+                            <option value="Haute">Haute</option>
+                            <option value="Critique">Critique</option>
                         </select>
                     </div>
                 </div>
@@ -300,10 +296,7 @@
         <div class="modal-card mini">
             <h3>Nouveau Projet</h3>
             <div style="margin:20px 0;"><label>Nom</label><input type="text" id="qcProjectName"></div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeQuickCreate('Project')">Fermer</button>
-                <button class="btn-save" onclick="saveQuickCreate('Project')">Créer</button>
-            </div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeQuickCreate('Project')">Fermer</button><button class="btn-save" onclick="saveQuickCreate('Project')">Créer</button></div>
         </div>
     </div>
 
@@ -311,28 +304,22 @@
         <div class="modal-card mini">
             <h3>Nouvel Agent</h3>
             <div style="margin:20px 0;">
-                <label>Nom Complet</label><input type="text" id="qcAgentName" style="margin-bottom:15px">
-                <label>Équipe (Administration)</label>
+                <label>Nom</label><input type="text" id="qcAgentName" style="margin-bottom:15px">
+                <label>Administration</label>
                 <div class="input-with-action">
                     <select id="qcAgentTeam"><option value="">Aucune</option></select>
                     <button type="button" class="btn-plus" onclick="openQuickCreate('Team')">+</button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeQuickCreate('Agent')">Fermer</button>
-                <button class="btn-save" onclick="saveQuickCreate('Agent')">Créer</button>
-            </div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeQuickCreate('Agent')">Fermer</button><button class="btn-save" onclick="saveQuickCreate('Agent')">Créer</button></div>
         </div>
     </div>
 
     <div class="modal-overlay" id="modalQcTeam" style="z-index: 1200;">
         <div class="modal-card mini">
-            <h3>Nouvelle Équipe</h3>
+            <h3>Nouvelle Administration</h3>
             <div style="margin:20px 0;"><label>Nom (ex: DGFIP)</label><input type="text" id="qcTeamName"></div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeQuickCreate('Team')">Fermer</button>
-                <button class="btn-save" onclick="saveQuickCreate('Team')">Créer</button>
-            </div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="closeQuickCreate('Team')">Fermer</button><button class="btn-save" onclick="saveQuickCreate('Team')">Créer</button></div>
         </div>
     </div>
 
@@ -351,6 +338,20 @@
             await loadData();
             updateSync(false, "Données à jour");
         });
+
+        // --- GÉNÉRATEUR DE COULEURS AUTO ---
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return '#' + "00000".substring(0, 6 - c.length) + c;
+        }
+        function getLightColor(str) {
+            let color = stringToColor(str);
+            // On éclaircit la couleur pour qu'elle soit pastel (fond)
+            return color + '33'; // 20% opacity hex
+        }
+        function getDarkColor(str) { return stringToColor(str); }
 
         async function loadData() {
             try {
@@ -395,9 +396,14 @@
         function renderAll() {
             populateSelects();
             const fP = document.getElementById('filterProject').value;
+            const fT = document.getElementById('filterTeam').value; // Nouveau filtre
             const fA = document.getElementById('filterAgent').value;
            
-            const filtered = DB.tasks.filter(t => (fP === "" || t.Projet == fP) && (fA === "" || t.Responsable == fA));
+            const filtered = DB.tasks.filter(t =>
+                (fP === "" || t.Projet == fP) &&
+                (fT === "" || (t.teamName && t.teamName == fT)) && // Logique filtre team
+                (fA === "" || t.Responsable == fA)
+            );
 
             renderDashboard(filtered);
             renderGantt(filtered);
@@ -405,61 +411,81 @@
         }
 
         function renderDashboard(tasks) {
-            document.getElementById('kpi-cours').innerText = tasks.filter(t => t.progress > 0 && t.progress < 100).length;
-            document.getElementById('kpi-retard').innerText = tasks.filter(t => new Date(t.end) < new Date() && t.progress < 100).length;
-            document.getElementById('kpi-total').innerText = DB.projects.length;
+            // KPI 1: Taux Achèvement
+            const completed = tasks.filter(t => t.progress === 100).length;
+            const rate = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+            document.getElementById('kpi-completion').innerText = rate + "%";
 
-            const activeTasks = tasks.filter(t => t.progress < 100).sort((a,b) => new Date(a.end) - new Date(b.end));
-            const tbody = document.getElementById('dashBody');
-            tbody.innerHTML = "";
+            // KPI 2: Retard
+            const retard = tasks.filter(t => new Date(t.end) < new Date() && t.progress < 100).length;
+            document.getElementById('kpi-retard').innerText = retard;
 
-            if(activeTasks.length === 0) { tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;padding:20px;color:#999'>Aucune tâche active</td></tr>"; return; }
+            // KPI 3: Total Tâches
+            document.getElementById('kpi-total').innerText = tasks.length;
 
-            activeTasks.slice(0, 8).forEach(t => { // Top 8 urgences
-                const teamBadge = t.teamName ? `<span class="badge-team">${t.teamName}</span>` : '';
-                const tr = document.createElement('tr');
-                tr.onclick = () => openTaskModal(t);
-                tr.innerHTML = `
-                    <td>
-                        <div class="task-main">${t.Titre}</div>
-                        <div class="project-sub">${t.projectName}</div>
-                    </td>
-                    <td>
-                        <div class="agent-cell">
-                            <span class="agent-name">${t.agentName}</span>
-                            ${teamBadge}
-                        </div>
-                    </td>
-                    <td>${t.end}</td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;">
-                                <div style="width:${t.progress}%;height:100%;background:${t.progress==100?'#10b981':'var(--primary)'};border-radius:3px;"></div>
-                            </div>
-                            <span style="font-size:0.75rem;font-weight:700">${t.progress}%</span>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            // STATS: Par Priorité
+            const prioMap = { 'Critique': 0, 'Haute': 0, 'Moyenne': 0, 'Basse': 0 };
+            tasks.forEach(t => { if(prioMap[t.Priorite] !== undefined) prioMap[t.Priorite]++; });
+           
+            let prioHTML = "";
+            const prioColors = {'Critique':'#DC2626', 'Haute':'#EA580C', 'Moyenne':'#2563EB', 'Basse':'#64748B'};
+            for (const [key, count] of Object.entries(prioMap)) {
+                if(count > 0) {
+                    const pct = Math.round((count/tasks.length)*100);
+                    prioHTML += `
+                    <div class="stat-row">
+                        <div style="width:80px; font-weight:600">${key}</div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:${prioColors[key]}"></div></div>
+                        <div style="width:30px; text-align:right">${count}</div>
+                    </div>`;
+                }
+            }
+            document.getElementById('stats-prio').innerHTML = prioHTML || "<p style='color:#999'>Aucune donnée</p>";
+
+            // STATS: Par Administration (Equipe)
+            const teamMap = {};
+            tasks.forEach(t => {
+                const team = t.teamName || "Aucune";
+                teamMap[team] = (teamMap[team] || 0) + 1;
             });
+            let teamHTML = "";
+            for (const [key, count] of Object.entries(teamMap)) {
+                const pct = Math.round((count/tasks.length)*100);
+                const color = getDarkColor(key);
+                teamHTML += `
+                <div class="stat-row">
+                    <div style="width:120px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${key}</div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:${color}"></div></div>
+                    <div style="width:30px; text-align:right">${count}</div>
+                </div>`;
+            }
+            document.getElementById('stats-team').innerHTML = teamHTML || "<p style='color:#999'>Aucune donnée</p>";
         }
 
         function renderList(tasks) {
             const tbody = document.getElementById('listBody');
             tbody.innerHTML = "";
             tasks.forEach(t => {
-                const teamBadge = t.teamName ? `<span class="badge-team">${t.teamName}</span>` : '';
                 const tr = document.createElement('tr');
                 tr.onclick = () => openTaskModal(t);
                
-                let prioColor = '#64748b';
-                if(t.Priorite === 'Critique') prioColor = 'var(--prio-critique)';
-                if(t.Priorite === 'Haute') prioColor = 'var(--prio-haute)';
+                // Codes couleurs auto
+                const projBg = getLightColor(t.projectName);
+                const projTxt = getDarkColor(t.projectName);
+               
+                // Badge Equipe (Sous le nom, style automatique)
+                const teamBadge = t.teamName
+                    ? `<span class="badge-pill" style="background:${getLightColor(t.teamName)}; color:${getDarkColor(t.teamName)}">${t.teamName}</span>`
+                    : '';
+
+                // Priorité Couleur Texte
+                const prioColors = {'Critique':'#DC2626', 'Haute':'#EA580C', 'Moyenne':'#2563EB', 'Basse':'#64748B'};
+                const pColor = prioColors[t.Priorite] || '#64748B';
 
                 tr.innerHTML = `
                     <td>
                         <div class="task-main">${t.Titre}</div>
-                        <span class="badge-project">${t.projectName}</span>
+                        <span class="badge-pill" style="background:${projBg}; color:${projTxt}">${t.projectName}</span>
                     </td>
                     <td>
                         <div class="agent-cell">
@@ -468,8 +494,13 @@
                         </div>
                     </td>
                     <td>${t.end}</td>
-                    <td style="color:${prioColor}; font-weight:700; font-size:0.85rem">${t.Priorite || 'Moyenne'}</td>
-                    <td>${t.progress === 100 ? '✅ Terminé' : t.progress + '%'}</td>
+                    <td style="color:${pColor}; font-weight:700; font-size:0.85rem">${t.Priorite || 'Moyenne'}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="prog-container"><div class="prog-bar" style="width:${t.progress}%; background:${t.progress==100?'#10b981':'var(--primary)'}"></div></div>
+                            <span style="font-size:0.75rem; font-weight:600">${t.progress}%</span>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -480,10 +511,13 @@
             el.innerHTML = "";
             if(tasks.length === 0) { el.innerHTML = "<p style='text-align:center;padding:30px;color:#999'>Rien à afficher</p>"; return; }
            
+            // Ajustement des colonnes pour lisibilité
+            const colWidth = ganttMode === 'Month' ? 200 : (ganttMode === 'Week' ? 50 : 30); // Largeur adaptée
+
             gantt = new Gantt("#gantt-chart", tasks, {
-                header_height: 60, column_width: 38, step: 24,
+                header_height: 60, column_width: colWidth, step: 24,
                 view_modes: ['Day', 'Week', 'Month'],
-                bar_height: 28, bar_corner_radius: 4, arrow_curve: 5, padding: 20,
+                bar_height: 25, bar_corner_radius: 4, arrow_curve: 5, padding: 18,
                 view_mode: ganttMode, date_format: 'YYYY-MM-DD', language: 'fr',
                 on_click: t => openTaskModal(t),
                 on_date_change: (t, s, e) => saveAction('UpdateRecord', TABLES.TASKS, t.id, { Date_Debut: fmtDate(s), Date_Fin: fmtDate(e) }),
@@ -495,14 +529,14 @@
             ganttMode = mode;
             document.querySelectorAll('.btn-zoom').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(gantt) gantt.change_view_mode(mode);
+            // Refresh complet nécessaire parfois pour recalibrer les colonnes
+            renderAll();
         }
 
-        /* --- ACTIONS MODALES --- */
+        /* --- ACTIONS MODALES & QUICK CREATE --- */
         function openTaskModal(t=null) {
             const f = document.getElementById('formTask');
             if(t) {
-                document.getElementById('modalTaskTitle').innerText = "Modifier Tâche";
                 document.getElementById('taskId').value = t.id;
                 document.getElementById('taskTitle').value = t.Titre;
                 document.getElementById('taskProject').value = t.Projet;
@@ -513,7 +547,6 @@
                 document.getElementById('taskPrio').value = t.Priorite;
             } else {
                 f.reset();
-                document.getElementById('modalTaskTitle').innerText = "Nouvelle Tâche";
                 document.getElementById('taskId').value = "";
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('taskStart').value = today;
@@ -562,6 +595,10 @@
                 if(type === 'Project') {
                     const r = await grist.docApi.fetchTable(TABLES.PROJECTS);
                     DB.projects = convert(r).map(p=>({id:p.id, name:p.Nom_Projet||p.Nom}));
+                } else if(type === 'Team') {
+                    // Si Team, on recharge les équipes car le filtre en a besoin
+                    const r = await grist.docApi.fetchTable(TABLES.TEAMS);
+                    DB.teams = convert(r).map(t => ({ id: t.id, name: t.Nom || t.Nom_Equipe }));
                 } else { await loadData(); }
                 populateSelects(); closeQuickCreate(type); updateSync(false, "OK");
             } catch(e) { alert(e.message); updateSync(false, "Erreur"); }
@@ -574,7 +611,15 @@
         }
 
         /* --- UTILS --- */
-        function populateSelects() { populateBox('#filterProject', DB.projects); populateBox('#taskProject', DB.projects); populateBox('#filterAgent', DB.agents); populateBox('#taskAgent', DB.agents); }
+        function populateSelects() {
+            populateBox('#filterProject', DB.projects);
+            populateBox('#taskProject', DB.projects);
+            populateBox('#filterAgent', DB.agents);
+            populateBox('#taskAgent', DB.agents);
+            // Ajout Filtre Team
+            populateBox('#filterTeam', DB.teams.map(t => ({id: t.name, name: t.name}))); // Value = Name pour filtre facile
+        }
+       
         function populateBox(sel, list) {
             document.querySelectorAll(sel).forEach(el => {
                 const val = el.value; const def = el.options[0]; el.innerHTML = ""; el.appendChild(def);
