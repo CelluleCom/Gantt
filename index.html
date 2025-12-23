@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP - Pilotage V21</title>
+    <title>Project Cockpit - V23 Start</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN SYSTEM (V10 / V19) --- */
+        /* --- DESIGN SYSTEM (V10/19 Inchangé) --- */
         :root {
             --primary: #4F46E5; --bg-app: #F8FAFC; --bg-surface: #FFFFFF;
             --text-main: #1E293B; --text-muted: #64748B; --border: #E2E8F0;
@@ -66,7 +66,7 @@
         tr:hover td { background: #F8FAFC; cursor: pointer; }
 
         .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-top: 3px; }
-        .badge-team { background: #1E293B; color: white; text-transform: uppercase; margin-top: 4px; }
+        .badge-team { background: #1E293B; color: white; text-transform: uppercase; }
         .agent-stack { display: flex; flex-direction: column; align-items: flex-start; }
 
         /* GANTT */
@@ -95,18 +95,14 @@
         input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
         .m-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .btn-sec { background: transparent; border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        
-        @media (max-width: 768px) { .kpi-grid, .stats-grid, .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div class="app-title">Project Cockpit</div>
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <div class="sync-badge"><div class="dot" id="syncDot"></div> <span id="syncText">Connexion...</span></div>
-            <button class="btn-primary" onclick="openModal()"><span>+</span> Tâche</button>
-        </div>
+        <div class="sync-badge"><div class="dot" id="syncDot"></div> <span id="syncText">Connexion...</span></div>
+        <button class="btn-primary" onclick="openModal()"><span>+</span> Tâche</button>
     </header>
 
     <div class="toolbar">
@@ -188,64 +184,55 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
     <script>
-        // --- 1. CONFIGURATION (ID TABLES EXACTS) ---
-        const TABLES = {
-            TABLE_PRINCIPALE: 'TACHES_MASTER',
-            TABLE_AGENTS: 'AGENTS',
-            TABLE_PROJETS: 'PROJETS',
-            TABLE_EQUIPES: 'EQUIPES'
-        };
-
-        // Stockage local
+        // CONFIGURATION ID GRIST
+        const DB = { TASKS: 'TACHES_MASTER', AGENTS: 'AGENTS', PROJECTS: 'PROJETS', TEAMS: 'EQUIPES' };
         let appData = { tasks: [], agents: [], projects: [], teams: [] };
         let ganttChart = null;
 
-        // --- 2. INITIALISATION ---
         grist.ready({ requiredAccess: 'full' });
-
         grist.onRecords(async function() {
             updateSyncStatus("Sync...", "orange");
             await loadAllTables();
             updateSyncStatus("Prêt", "var(--c-green)");
         });
 
-        // --- 3. CHARGEMENT DES DONNÉES (MAPPING EXACT) ---
+        // 1. CHARGEMENT ROBUSTE (Gère les tables vides)
         async function loadAllTables() {
             try {
-                const rawTasks = await fetchGristTable(TABLES.TABLE_PRINCIPALE);
-                const rawAgents = await fetchGristTable(TABLES.TABLE_AGENTS);
-                const rawProjects = await fetchGristTable(TABLES.TABLE_PROJETS);
-                const rawTeams = await fetchGristTable(TABLES.TABLE_EQUIPES);
+                const rawTasks = await fetchGristTable(DB.TASKS);
+                const rawAgents = await fetchGristTable(DB.AGENTS);
+                const rawProjects = await fetchGristTable(DB.PROJECTS);
+                const rawTeams = await fetchGristTable(DB.TEAMS);
 
-                // MAPPING EQUIPES: "Nom_Equipe"
+                // MAPPING avec sécurité "Table Vide"
                 appData.teams = rawTeams.map(r => ({ id: r.id, name: r.Nom_Equipe || r.Nom || "Équipe" }));
-                
-                // MAPPING PROJETS: "Nom_Projet"
                 appData.projects = rawProjects.map(r => ({ id: r.id, name: r.Nom_Projet || r.Nom }));
                 
-                // MAPPING AGENTS: "Nom_Complet" et "Equipe"
                 appData.agents = rawAgents.map(r => {
                     const team = appData.teams.find(t => t.id === r.Equipe);
                     return { id: r.id, name: r.Nom_Complet || r.Nom, teamName: team ? team.name : null };
                 });
 
-                // MAPPING TACHES: "Titre", "Date_Debut", "Date_Fin", "Avancement", "Dependances"
                 appData.tasks = rawTasks.map(t => {
                     const agent = appData.agents.find(a => a.id === t.Responsable) || { name: 'Non assigné', teamName: null };
                     const project = appData.projects.find(p => p.id === t.Projet) || { name: 'Aucun' };
                     
                     let color = 'bar-basse';
-                    const isLate = new Date(t.Date_Fin * 1000) < new Date() && t.Avancement < 100; // *1000 car Grist envoie des secondes
+                    // Sécurité dates vides pour éviter le crash
+                    const now = new Date();
+                    let s = t.Date_Debut ? formatDateIso(t.Date_Debut) : formatDateIso(now);
+                    let e = t.Date_Fin ? formatDateIso(t.Date_Fin) : formatDateIso(now);
+                    
+                    const isLate = new Date(e) < now && t.Avancement < 100;
                     if(t.Avancement === 100) color = 'bar-termine';
                     else if (t.Priorite === 'Critique' || isLate) color = 'bar-critique';
                     else if (t.Priorite === 'Haute') color = 'bar-haute';
                     else if (t.Priorite === 'Moyenne') color = 'bar-moyenne';
 
-                    // Variables UI
                     return {
                         ...t, id: t.id.toString(),
                         displayAgent: agent.name, displayTeam: agent.teamName, displayProject: project.name,
-                        name: t.Titre, start: formatDateIso(t.Date_Debut), end: formatDateIso(t.Date_Fin),
+                        name: t.Titre, start: s, end: e,
                         progress: t.Avancement || 0, dependencies: t.Dependances || "", custom_class: color
                     };
                 });
@@ -259,25 +246,24 @@
             }
         }
 
-        // Fonction générique lecture
         async function fetchGristTable(tableId) {
-            const raw = await grist.docApi.fetchTable(tableId);
-            return convertToRowFormat(raw);
+            try {
+                const raw = await grist.docApi.fetchTable(tableId);
+                return convertToRowFormat(raw);
+            } catch (e) { return []; } // Retourne vide si table non trouvée
         }
 
-        // --- 4. SAUVEGARDE ---
+        // 2. SAUVEGARDE ET CREATION (Debugué pour tables vides)
         async function saveToGrist(action, tableId, rowId, fields) {
             updateSyncStatus("Sauvegarde...", "orange");
             const args = action === 'AddRecord' ? [null, fields] : [parseInt(rowId), fields];
             try {
                 await grist.docApi.applyUserActions([[action, tableId, ...args]]);
             } catch (e) {
-                console.error("Erreur sauvegarde :", e);
-                alert("Erreur lors de la sauvegarde.");
+                alert("Erreur Grist : " + e.message);
             }
         }
 
-        // --- 5. UTILITAIRE CONVERSION (CRUCIAL) ---
         function convertToRowFormat(tableData) {
             const keys = Object.keys(tableData);
             if (keys.length === 0) return [];
@@ -291,7 +277,7 @@
             return result;
         }
 
-        // --- 6. RENDU UI (V19) ---
+        // 3. RENDU UI
         function refreshUI() { populateSelects(); applyFilters(); }
 
         function applyFilters() {
@@ -321,7 +307,7 @@
             document.getElementById('kpi-retard').innerText = late;
 
             const pMap={'Critique':0,'Haute':0,'Moyenne':0,'Basse':0};
-            const pCols={'Critique':'#ef4444','Haute':'#f97316','Moyenne':'#3b82f6','Basse':'#94a3b8'};
+            const pCols={'Critique':'#EF4444','Haute':'#F97316','Moyenne':'#3B82F6','Basse':'#94A3B8'};
             tasks.forEach(t=>{if(pMap[t.Priorite]!==undefined) pMap[t.Priorite]++});
             let hP=""; for(const [k,v] of Object.entries(pMap)){ if(v>0){const pc=Math.round((v/tot)*100); hP+=`<div class="bar-row"><div class="bar-lbl">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${pc}%;background:${pCols[k]}"></div></div><div class="bar-val">${v}</div></div>`;}}
             document.getElementById('stats-prio').innerHTML = hP || "<div style='color:#999'>Rien</div>";
@@ -359,12 +345,12 @@
                 bar_height: 25, bar_corner_radius: 3, arrow_curve: 5, padding: 18, view_mode: 'Week',
                 date_format: 'YYYY-MM-DD', language: 'fr',
                 on_click: t => openModalById(t.id),
-                on_date_change: (t,s,e) => saveToGrist('UpdateRecord', TABLES.TABLE_PRINCIPALE, t.id, {Date_Debut:formatDateIso(s), Date_Fin:formatDateIso(e)}),
-                on_progress_change: (t,p) => saveToGrist('UpdateRecord', TABLES.TABLE_PRINCIPALE, t.id, {Avancement:p})
+                on_date_change: (t,s,e) => saveToGrist('UpdateRecord', DB.TASKS, t.id, {Date_Debut:formatDateIso(s), Date_Fin:formatDateIso(e)}),
+                on_progress_change: (t,p) => saveToGrist('UpdateRecord', DB.TASKS, t.id, {Avancement:p})
             });
         }
 
-        // --- ACTIONS ---
+        // --- ACTIONS & QUICK CREATE FIXE ---
         function openQC(type) {
             document.getElementById('qcType').value = type;
             document.getElementById('qcName').value = '';
@@ -383,18 +369,19 @@
             const name = document.getElementById('qcName').value.trim();
             if(!name) return;
             let tab, fields;
-            if (type === 'Project') { tab = TABLES.TABLE_PROJETS; fields = { Nom_Projet: name }; }
-            else if (type === 'Team') { tab = TABLES.TABLE_EQUIPES; fields = { Nom_Equipe: name }; } // Utilisation de Nom_Equipe
-            else if (type === 'Agent') { tab = TABLES.TABLE_AGENTS; fields = { Nom_Complet: name, Equipe: parseInt(document.getElementById('qcTeamSel').value)||null }; }
+            
+            // CORRECTION NOMS COLONNES ET GESTION "VIDE"
+            if (type === 'Project') { tab = DB.PROJECTS; fields = { Nom_Projet: name }; }
+            else if (type === 'Team') { tab = DB.TEAMS; fields = { Nom_Equipe: name }; }
+            else if (type === 'Agent') { 
+                tab = DB.AGENTS; 
+                // Gère le cas où aucune équipe n'est sélectionnée (ou vide)
+                const tVal = document.getElementById('qcTeamSel').value;
+                fields = { Nom_Complet: name, Equipe: tVal ? parseInt(tVal) : null }; 
+            }
             
             await saveToGrist('AddRecord', tab, null, fields);
-            // Recharger ciblé
-            if(type === 'Project') { const r = await fetchGristTable(TABLES.TABLE_PROJETS); appData.projects = r.map(d=>({id:d.id, name:d.Nom_Projet})); }
-            if(type === 'Team') { const r = await fetchGristTable(TABLES.TABLE_EQUIPES); appData.teams = r.map(d=>({id:d.id, name:d.Nom_Equipe})); }
-            if(type === 'Agent') { 
-                const r = await fetchGristTable(TABLES.TABLE_AGENTS); 
-                appData.agents = r.map(d=>({id:d.id, name:d.Nom_Complet, teamName:appData.teams.find(x=>x.id==d.Equipe)?.name})); 
-            }
+            await loadAllTables(); // Reload complet nécessaire pour MAJ les liens
             populateSelects(); closeQC(); updateSyncStatus("Créé !", "var(--c-green)");
         }
 
@@ -410,11 +397,11 @@
                 Avancement: parseInt(document.getElementById('inpProgress').value),
                 Priorite: document.getElementById('inpPriority').value
             };
-            saveToGrist(id ? 'UpdateRecord' : 'AddRecord', TABLES.TABLE_PRINCIPALE, id, data);
+            saveToGrist(id ? 'UpdateRecord' : 'AddRecord', DB.TASKS, id, data);
             closeModal();
         };
 
-        // --- UTILS UI ---
+        // --- UTILS ---
         function openModal(task = null) {
             const form = document.getElementById('taskForm');
             if(task) {
@@ -448,8 +435,10 @@
         function populateSelectBox(selector, list, useName=false) {
             document.querySelectorAll(selector).forEach(el => {
                 const v=el.value; const d=el.options[0]; el.innerHTML=""; el.appendChild(d);
-                list.forEach(i => { const o = document.createElement('option'); o.value=useName?i.name:i.id; o.innerText=i.name; el.appendChild(o); });
-                if(list.some(i=>(useName?i.name:i.id)==v)) el.value = v;
+                if(list && list.length > 0) {
+                    list.forEach(i => { const o = document.createElement('option'); o.value=useName?i.name:i.id; o.innerText=i.name; el.appendChild(o); });
+                    if(list.some(i=>(useName?i.name:i.id)==v)) el.value = v;
+                }
             });
         }
         function formatDateIso(v) { if(!v) return new Date().toISOString().split('T')[0]; const d = typeof v==='number'?new Date(v*1000):new Date(v); return d.toISOString().split('T')[0]; }
