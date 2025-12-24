@@ -1,901 +1,806 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Ultimate v6.1</title>
-    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-    <style>
-        /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
-        :root {
-            --primary: var(--grist-theme-cursor, #2563eb);
-            --primary-light: #eff6ff;
-            --bg: var(--grist-theme-page-bg, #f8fafc);
-            --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-sec: #64748b;
-            --border: #e2e8f0;
-            
-            /* Couleurs Sémantiques */
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt'FIP Ultimate</title>
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <style>
+        /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
+        :root {
+            --primary: var(--grist-theme-cursor, #2563eb);
+            --primary-light: #eff6ff;
+            --bg: var(--grist-theme-page-bg, #f8fafc);
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-sec: #64748b;
+            --border: #e2e8f0;
+            
+            /* Couleurs Sémantiques */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
 
-            /* Formes */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
+            /* Formes */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
 
-        * { box-sizing: border-box; outline: none; }
+        * { box-sizing: border-box; outline: none; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            font-size: 14px;
-            line-height: 1.5;
-            padding-bottom: 80px;
-            user-select: none; /* Important pour le Drag & Drop */
-        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-bottom: 80px; /* Espace pour le FAB mobile */
+        }
 
-        /* --- 2. LAYOUT & NAVIGATION --- */
-        .app-header {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+        /* --- 2. LAYOUT & NAVIGATION --- */
+        .app-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        h1.app-logo {
-            font-size: 22px;
-            font-weight: 800;
-            margin: 0;
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
+        h1.app-logo {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
 
-        /* Onglets (Pills Design) */
-        .nav-pills {
-            display: flex;
-            background: #e2e8f0;
-            padding: 4px;
-            border-radius: var(--radius-lg);
-            width: fit-content;
-            gap: 4px;
-        }
+        /* Onglets (Pills Design) */
+        .nav-pills {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: var(--radius-lg);
+            width: fit-content;
+            gap: 4px;
+        }
 
-        .nav-item {
-            padding: 8px 20px;
-            border-radius: var(--radius-md);
-            border: none;
-            background: transparent;
-            color: var(--text-sec);
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .nav-item {
+            padding: 8px 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: transparent;
+            color: var(--text-sec);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
-        .nav-item.active {
-            background: var(--surface);
-            color: var(--text-main);
-            box-shadow: var(--shadow-sm);
-        }
+        .nav-item.active {
+            background: var(--surface);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
 
-        /* --- 3. ACTIONS & FILTRES --- */
-        .toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto auto; /* Ajout auto pour le bouton PDF */
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+        /* --- 3. ACTIONS & FILTRES --- */
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
-        .select-modern {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            background: var(--surface);
-            color: var(--text-main);
-            font-size: 13px;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 16px;
-        }
+        .select-modern {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 13px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+        }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: var(--shadow-md);
-            transition: transform 0.1s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn-secondary {
-            background: var(--surface);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            padding: 10px 15px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-        .btn-primary:active, .btn-secondary:active { transform: scale(0.98); }
+        .btn-primary:active { transform: scale(0.98); }
 
-        /* --- 4. VUES (Transitions) --- */
-        .view-container { display: none; animation: fadeIn 0.4s ease; }
-        .view-container.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- 4. VUES (Transitions) --- */
+        .view-container { display: none; animation: fadeIn 0.4s ease; }
+        .view-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* VUE 1: TABLEAU DE BORD (Grid) */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+        /* VUE 1: TABLEAU DE BORD (Grid) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-        .stat-card {
-            background: var(--surface);
-            padding: 20px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+        .stat-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-        .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-sec); letter-spacing: 0.5px; }
-        .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
-        .stat-footer { font-size: 12px; color: var(--text-sec); display: flex; align-items: center; gap: 4px; }
+        .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-sec); letter-spacing: 0.5px; }
+        .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
+        .stat-footer { font-size: 12px; color: var(--text-sec); display: flex; align-items: center; gap: 4px; }
 
-        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
-        
-        /* Barres de progression custom */
-        .bar-group { margin-bottom: 12px; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
-        .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 4px; }
+        .section-title { font-size: 16px; font-weight: 700; margin: 30px 0 16px 0; color: var(--text-main); }
+        
+        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+        
+        /* Barres de progression custom */
+        .bar-group { margin-bottom: 12px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
+        .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; }
 
-        /* Table minimaliste "À venir" */
-        .mini-table { width: 100%; border-collapse: collapse; }
-        .mini-table td { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .mini-table tr:last-child td { border-bottom: none; }
+        /* Table minimaliste "À venir" */
+        .mini-table { width: 100%; border-collapse: collapse; }
+        .mini-table td { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .mini-table tr:last-child td { border-bottom: none; }
 
-        /* VUE 2: GANTT */
-        .gantt-wrapper {
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            overflow-x: auto;
-            padding: 16px;
-            position: relative; /* Pour le positionnement du Drag */
-        }
-        .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
-        .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; cursor: pointer; }
-        .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
-        
-        .gantt-block { 
-            position: absolute; 
-            height: 16px; 
-            top: 4px; 
-            border-radius: 4px; 
-            min-width: 8px; 
-            cursor: grab; /* Indique qu'on peut attraper */
-            transition: box-shadow 0.2s, opacity 0.2s; 
-            z-index: 10;
-        }
-        .gantt-block:hover { opacity: 0.9; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .gantt-block:active { cursor: grabbing; opacity: 1; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 20; }
+        /* VUE 2: GANTT */
+        .gantt-wrapper {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            padding: 16px;
+        }
+        .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
+        .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+        .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
+        .gantt-block { position: absolute; height: 16px; top: 4px; border-radius: 4px; min-width: 8px; cursor: pointer; transition: opacity 0.2s; }
+        .gantt-block:hover { opacity: 0.8; }
 
-        /* VUE 3: LISTE */
-        .task-list { display: flex; flex-direction: column; gap: 12px; }
-        .task-card {
-            background: var(--surface);
-            padding: 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cbd5e1; }
-        
-        .priority-high::before { background: var(--danger); }
-        .priority-medium::before { background: var(--warning); }
-        .priority-low::before { background: var(--success); }
+        /* VUE 3: LISTE */
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-card {
+            background: var(--surface);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cbd5e1; }
+        
+        .priority-high::before { background: var(--danger); }
+        .priority-medium::before { background: var(--warning); }
+        .priority-low::before { background: var(--success); }
 
-        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .card-h3 { font-size: 15px; font-weight: 700; margin: 0; }
-        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; color: #fff; }
-        
-        .card-btm { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sec); }
-        .avatar-row { display: flex; align-items: center; gap: 6px; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .card-h3 { font-size: 15px; font-weight: 700; margin: 0; }
+        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; color: #fff; }
+        
+        .card-btm { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sec); }
+        .avatar-row { display: flex; align-items: center; gap: 6px; }
 
-        /* --- 5. MODALE (EDITION/CREATION) --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(4px);
-            z-index: 999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
+        /* --- 5. MODALE (EDITION/CREATION) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
 
-        .modal-box {
-            background: var(--surface);
-            width: 100%;
-            max-width: 500px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-        }
-        
-        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-sec); }
-        
-        .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
-        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-box {
+            background: var(--surface);
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+        
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-sec); }
+        
+        .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
-        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
-        
-        /* Helper colors */
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        
-        /* Loading */
-        .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
-
-        /* --- 6. PRINT / PDF STYLES --- */
-        @media print {
-            body { background: white; padding: 0; margin: 0; overflow: visible; }
-            .app-header, .toolbar, .close-btn, .modal-overlay, .btn-primary, .btn-secondary { display: none !important; }
-            
-            /* On affiche uniquement la vue active en pleine largeur */
-            .view-container { display: block !important; width: 100% !important; animation: none; }
-            .gantt-wrapper, .dashboard-grid, .task-list { 
-                border: none; 
-                box-shadow: none; 
-                width: 100%; 
-                overflow: visible; 
-            }
-            .gantt-wrapper { overflow-x: hidden; } /* Evite les scrollbars en PDF */
-            
-            /* Titre pour le rapport */
-            #app-content::before {
-                content: "Rapport Gantt'FIP";
-                display: block;
-                font-size: 24px;
-                font-weight: bold;
-                margin-bottom: 20px;
-                color: black;
-            }
-            
-            /* Forcer les couleurs de fond pour l'impression */
-            .gantt-block, .bar-fill, .tag, .stat-card {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-        }
-    </style>
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
+        
+        /* Helper colors */
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        
+        /* Loading */
+        .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
+    </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="header-top">
-            <h1 class="app-logo">Gantt'FIP</h1>
-            <button class="btn-primary" onclick="openModal()">
-                <span>+ Nouvelle Tâche</span>
-            </button>
-        </div>
-        
-        <nav class="nav-pills">
-            <button class="nav-item active" onclick="switchView('dashboard')">Tableau de Bord</button>
-            <button class="nav-item" onclick="switchView('gantt')">Gantt</button>
-            <button class="nav-item" onclick="switchView('list')">Liste</button>
-        </nav>
-    </div>
+    <div class="app-header">
+        <div class="header-top">
+            <h1 class="app-logo">Gantt'FIP</h1>
+            <button class="btn-primary" onclick="openModal()">
+                <span>+ Nouvelle Tâche</span>
+            </button>
+        </div>
+        
+        <nav class="nav-pills">
+            <button class="nav-item active" onclick="switchView('dashboard')">Tableau de Bord</button>
+            <button class="nav-item" onclick="switchView('gantt')">Gantt</button>
+            <button class="nav-item" onclick="switchView('list')">Liste</button>
+        </nav>
+    </div>
 
-    <div class="toolbar">
-        <select id="filter-team" class="select-modern" onchange="handleFilters()">
-            <option value="all">Toutes les administrations</option>
-        </select>
-        <select id="filter-project" class="select-modern" onchange="handleFilters()">
-            <option value="all">Tous les projets</option>
-        </select>
-        <button class="btn-secondary" onclick="exportPDF()">
-            🖨️ PDF / Imprimer
-        </button>
-    </div>
+    <div class="toolbar">
+        <select id="filter-team" class="select-modern" onchange="handleFilters()">
+            <option value="all">Toutes les administrations</option>
+        </select>
+        <select id="filter-project" class="select-modern" onchange="handleFilters()">
+            <option value="all">Tous les projets</option>
+        </select>
+    </div>
 
-    <div id="app-content">
-        <div class="loading">Chargement des données...</div>
-    </div>
+    <div id="app-content">
+        <div class="loading">Chargement des données...</div>
+    </div>
 
-    <div id="modal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 id="modal-title" class="modal-title">Nouvelle Tâche</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="input-id">
-                
-                <div class="form-group">
-                    <label class="form-label">Titre de la tâche</label>
-                    <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
-                </div>
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">Nouvelle Tâche</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="input-id">
+                
+                <div class="form-group">
+                    <label class="form-label">Titre de la tâche</label>
+                    <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
+                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Administration (Team)</label>
-                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-teams"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Projet</label>
-                        <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-projects"></datalist>
-                    </div>
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Administration (Team)</label>
+                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
+                        <datalist id="list-teams"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Projet</label>
+                        <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
+                        <datalist id="list-projects"></datalist>
+                    </div>
+                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Responsable</label>
-                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
-                        <datalist id="list-assignees"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priorité</label>
-                        <select id="input-priority" class="form-input">
-                            <option value="Low">Low (Basse)</option>
-                            <option value="Medium" selected>Medium (Moyenne)</option>
-                            <option value="High">High (Haute)</option>
-                        </select>
-                    </div>
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
+                        <datalist id="list-assignees"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priorité</label>
+                        <select id="input-priority" class="form-input">
+                            <option value="Low">Low (Basse)</option>
+                            <option value="Medium" selected>Medium (Moyenne)</option>
+                            <option value="High">High (Haute)</option>
+                        </select>
+                    </div>
+                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Date de Début</label>
-                        <input type="date" id="input-start" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date de Fin</label>
-                        <input type="date" id="input-end" class="form-input">
-                    </div>
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date de Début</label>
+                        <input type="date" id="input-start" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date de Fin</label>
+                        <input type="date" id="input-end" class="form-input">
+                    </div>
+                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Progression (%)</label>
-                    <input type="number" id="input-progress" class="form-input" min="0" max="100" value="0">
-                    <input type="range" id="range-progress" min="0" max="100" value="0" style="margin-top:8px" oninput="document.getElementById('input-progress').value = this.value">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-sec" onclick="closeModal()">Annuler</button>
-                <button class="btn-primary" onclick="saveTask()">Enregistrer</button>
-            </div>
-        </div>
-    </div>
+                <div class="form-group">
+                    <label class="form-label">Progression (%)</label>
+                    <input type="number" id="input-progress" class="form-input" min="0" max="100" value="0">
+                    <input type="range" id="range-progress" min="0" max="100" value="0" style="margin-top:8px" oninput="document.getElementById('input-progress').value = this.value">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeModal()">Annuler</button>
+                <button class="btn-primary" onclick="saveTask()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
 
 <script>
-    /**
-     * ===========================================
-     * GANTT'FIP ULTIMATE - V6.1 (DRAG & PDF)
-     * ===========================================
-     */
+    /**
+     * ===========================================
+     * GANTT'FIP ULTIMATE - V6 ENGINE
+     * ===========================================
+     */
 
-    // --- 1. CONFIGURATION STRICTE ---
-    const MAPPING = [
-        { name: 'Title',     title: 'Titre' },
-        { name: 'Assignee',  title: 'Responsable' },
-        { name: 'Team',      title: 'Administration' },
-        { name: 'Project',   title: 'Projet' },
-        { name: 'StartDate', title: 'Début', type: 'Date' },
-        { name: 'EndDate',   title: 'Fin',   type: 'Date' },
-        { name: 'Progress',  title: 'Progression', type: 'Numeric' },
-        { name: 'Priority',  title: 'Priorité', type: 'Choice' }
-    ];
+    // --- 1. CONFIGURATION STRICTE ---
+    const MAPPING = [
+        { name: 'Title',     title: 'Titre' },
+        { name: 'Assignee',  title: 'Responsable' },
+        { name: 'Team',      title: 'Administration' },
+        { name: 'Project',   title: 'Projet' },
+        { name: 'StartDate', title: 'Début', type: 'Date' },
+        { name: 'EndDate',   title: 'Fin',   type: 'Date' },
+        { name: 'Progress',  title: 'Progression', type: 'Numeric' },
+        { name: 'Priority',  title: 'Priorité', type: 'Choice' }
+    ];
 
-    // STATE MANAGEMENT
-    let state = {
-        allRecords: [],
-        filteredRecords: [],
-        filters: { team: 'all', project: 'all' },
-        currentView: 'dashboard',
-        uniqueTeams: [],
-        uniqueProjects: [],
-        uniqueAssignees: []
-    };
+    // STATE MANAGEMENT
+    let state = {
+        allRecords: [],
+        filteredRecords: [],
+        filters: { team: 'all', project: 'all' },
+        currentView: 'dashboard',
+        uniqueTeams: [],
+        uniqueProjects: [],
+        uniqueAssignees: []
+    };
 
-    // DRAG & DROP STATE
-    let dragState = {
-        isDragging: false,
-        element: null,
-        recordId: null,
-        startX: 0,
-        initialLeft: 0,
-        timelineWidth: 0,
-        msPerPixel: 0,
-        originalStart: null,
-        originalEnd: null
-    };
+    // --- 2. UTILITAIRES ---
+    const Utils = {
+        // Date Grist (Sec vs Days)
+        fromGristDate: (val) => {
+            if (!val && val !== 0) return null;
+            return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
+        },
+        toGristDate: (dateObj) => {
+            if (!dateObj) return null;
+            const utc = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            return Math.floor(utc / 86400000);
+        },
+        formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
+        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', // Pour input type="date"
+        
+        // Couleur HASH consistante
+        stringToColor: (str) => {
+            if (!str) return '#94a3b8';
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const h = Math.abs(hash) % 360;
+            return `hsl(${h}, 70%, 45%)`;
+        },
 
-    // --- 2. UTILITAIRES ---
-    const Utils = {
-        fromGristDate: (val) => {
-            if (!val && val !== 0) return null;
-            return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
-        },
-        toGristDate: (dateObj) => {
-            if (!dateObj) return null;
-            const utc = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            return Math.floor(utc / 86400000);
-        },
-        formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
-        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', 
-        stringToColor: (str) => {
-            if (!str) return '#94a3b8';
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            const h = Math.abs(hash) % 360;
-            return `hsl(${h}, 70%, 45%)`;
-        },
-        cleanData: (data) => {
-            if (Array.isArray(data)) return data;
-            if (!data) return [];
-            const cols = Object.keys(data);
-            if (!cols.length) return [];
-            const rows = [];
-            for(let i=0; i<data[cols[0]].length; i++) {
-                let rec = { id: data.id[i] };
-                cols.forEach(c => { if(c!=='id') rec[c] = data[c][i]; });
-                rows.push(rec);
-            }
-            return rows;
-        }
-    };
+        // Nettoyage données Table -> Liste d'objets
+        cleanData: (data) => {
+            if (Array.isArray(data)) return data;
+            if (!data) return [];
+            const cols = Object.keys(data);
+            if (!cols.length) return [];
+            const rows = [];
+            for(let i=0; i<data[cols[0]].length; i++) {
+                let rec = { id: data.id[i] };
+                cols.forEach(c => { if(c!=='id') rec[c] = data[c][i]; });
+                rows.push(rec);
+            }
+            return rows;
+        }
+    };
 
-    // --- 3. INIT & EVENTS GRIST ---
-    grist.ready({ columns: MAPPING, requiredAccess: 'full' });
+    // --- 3. INIT & EVENTS GRIST ---
+    grist.ready({ columns: MAPPING, requiredAccess: 'full' });
 
-    grist.onRecords(data => {
-        state.allRecords = Utils.cleanData(data);
-        extractUniqueValues();
-        updateFilterSelects();
-        handleFilters(); 
-    });
+    grist.onRecords(data => {
+        state.allRecords = Utils.cleanData(data);
+        extractUniqueValues();
+        updateFilterSelects();
+        handleFilters(); // Déclenche le render
+    });
 
-    function extractUniqueValues() {
-        state.uniqueTeams = [...new Set(state.allRecords.map(r => r.Team).filter(Boolean))].sort();
-        state.uniqueProjects = [...new Set(state.allRecords.map(r => r.Project).filter(Boolean))].sort();
-        state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
-    }
+    function extractUniqueValues() {
+        state.uniqueTeams = [...new Set(state.allRecords.map(r => r.Team).filter(Boolean))].sort();
+        state.uniqueProjects = [...new Set(state.allRecords.map(r => r.Project).filter(Boolean))].sort();
+        state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
+    }
 
-    // --- 4. LOGIQUE FILTRES & ACTIONS ---
-    function updateFilterSelects() {
-        const tVal = document.getElementById('filter-team').value;
-        const pVal = document.getElementById('filter-project').value;
-        const tSelect = document.getElementById('filter-team');
-        const pSelect = document.getElementById('filter-project');
+    // --- 4. LOGIQUE FILTRES ---
+    function updateFilterSelects() {
+        // Conserve sélection user
+        const tVal = document.getElementById('filter-team').value;
+        const pVal = document.getElementById('filter-project').value;
 
-        tSelect.innerHTML = `<option value="all">Toutes les administrations</option>` + 
-            state.uniqueTeams.map(t => `<option value="${t}">${t}</option>`).join('');
-        
-        pSelect.innerHTML = `<option value="all">Tous les projets</option>` + 
-            state.uniqueProjects.map(p => `<option value="${p}">${p}</option>`).join('');
+        const tSelect = document.getElementById('filter-team');
+        const pSelect = document.getElementById('filter-project');
 
-        if(state.uniqueTeams.includes(tVal)) tSelect.value = tVal;
-        if(state.uniqueProjects.includes(pVal)) pSelect.value = pVal;
-    }
+        tSelect.innerHTML = `<option value="all">Toutes les administrations</option>` + 
+            state.uniqueTeams.map(t => `<option value="${t}">${t}</option>`).join('');
+        
+        pSelect.innerHTML = `<option value="all">Tous les projets</option>` + 
+            state.uniqueProjects.map(p => `<option value="${p}">${p}</option>`).join('');
 
-    function handleFilters() {
-        state.filters.team = document.getElementById('filter-team').value;
-        state.filters.project = document.getElementById('filter-project').value;
+        if(state.uniqueTeams.includes(tVal)) tSelect.value = tVal;
+        if(state.uniqueProjects.includes(pVal)) pSelect.value = pVal;
+    }
 
-        state.filteredRecords = state.allRecords.filter(r => {
-            const teamOk = state.filters.team === 'all' || r.Team === state.filters.team;
-            const projOk = state.filters.project === 'all' || r.Project === state.filters.project;
-            return teamOk && projOk;
-        });
+    function handleFilters() {
+        state.filters.team = document.getElementById('filter-team').value;
+        state.filters.project = document.getElementById('filter-project').value;
 
-        renderCurrentView();
-    }
+        state.filteredRecords = state.allRecords.filter(r => {
+            const teamOk = state.filters.team === 'all' || r.Team === state.filters.team;
+            const projOk = state.filters.project === 'all' || r.Project === state.filters.project;
+            return teamOk && projOk;
+        });
 
-    function switchView(view) {
-        state.currentView = view;
-        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
-        renderCurrentView();
-    }
+        renderCurrentView();
+    }
 
-    // AJOUT: FONCTION EXPORT PDF
-    function exportPDF() {
-        window.print();
-    }
+    function switchView(view) {
+        state.currentView = view;
+        // Update tabs UI
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
+        renderCurrentView();
+    }
 
-    function renderCurrentView() {
-        const container = document.getElementById('app-content');
-        container.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'view-container active';
+    function renderCurrentView() {
+        const container = document.getElementById('app-content');
+        container.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'view-container active';
 
-        if(state.currentView === 'dashboard') renderDashboard(wrapper);
-        else if(state.currentView === 'gantt') renderGantt(wrapper);
-        else renderList(wrapper);
+        if(state.currentView === 'dashboard') renderDashboard(wrapper);
+        else if(state.currentView === 'gantt') renderGantt(wrapper);
+        else renderList(wrapper);
 
-        container.appendChild(wrapper);
-    }
+        container.appendChild(wrapper);
+    }
 
-    // --- 5. MOTEURS DE RENDU ---
+    // --- 5. MOTEURS DE RENDU ---
 
-    /** VUE 1 : DASHBOARD **/
-    function renderDashboard(container) {
-        const data = state.filteredRecords;
-        const total = data.length;
-        const now = new Date();
-        const done = data.filter(r => (r.Progress||0) == 100).length;
-        const late = data.filter(r => {
-            const end = Utils.fromGristDate(r.EndDate);
-            return end && end < now && (r.Progress||0) < 100;
-        }).length;
-        const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
-        const donePct = total ? Math.round((done/total)*100) : 0;
+    /** VUE 1 : DASHBOARD **/
+    function renderDashboard(container) {
+        const data = state.filteredRecords;
+        const total = data.length;
+        const now = new Date();
 
-        container.innerHTML = `
-            <div class="dashboard-grid">
-                <div class="stat-card">
-                    <div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:var(--primary)">${total}</div></div>
-                    <div class="stat-footer">Toutes tâches confondues</div>
-                </div>
-                <div class="stat-card">
-                    <div><div class="stat-title">Terminées</div><div class="stat-value text-success">${done}</div></div>
-                    <div class="stat-footer">${donePct}% du total</div>
-                </div>
-                <div class="stat-card">
-                    <div><div class="stat-title">En Retard</div><div class="stat-value text-danger">${late}</div></div>
-                    <div class="stat-footer">À traiter en urgence</div>
-                </div>
-                <div class="stat-card">
-                    <div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--warning)">${inProgress}</div></div>
-                    <div class="stat-footer">Actives</div>
-                </div>
-            </div>
-            <div class="charts-row">
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Par Priorité</h4>
-                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
-                </div>
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Par Administration</h4>
-                    ${renderBarChart(data, 'Team', null)}
-                </div>
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Prochaines Échéances</h4>
-                    <table class="mini-table">
-                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100).sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate)).slice(0,5).map(r => `
-                            <tr>
-                                <td><strong>${r.Title}</strong></td>
-                                <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
-                            </tr>`).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
-                    </table>
-                </div>
-            </div>
-        `;
-    }
+        // Stats
+        const done = data.filter(r => (r.Progress||0) == 100).length;
+        const late = data.filter(r => {
+            const end = Utils.fromGristDate(r.EndDate);
+            return end && end < now && (r.Progress||0) < 100;
+        }).length;
+        const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
+        
+        const donePct = total ? Math.round((done/total)*100) : 0;
 
-    function renderBarChart(data, key, colorMap) {
-        const counts = {};
-        data.forEach(r => { const k = r[key] || 'Non défini'; counts[k] = (counts[k] || 0) + 1; });
-        const max = Math.max(...Object.values(counts), 1);
-        return Object.keys(counts).map(k => {
-            const count = counts[k];
-            const pct = (count / max) * 100;
-            const color = colorMap ? (colorMap[k] || '#ccc') : Utils.stringToColor(k);
-            return `
-                <div class="bar-group">
-                    <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div>
-                </div>`;
-        }).join('');
-    }
+        // HTML
+        container.innerHTML = `
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">Total Tâches</div>
+                        <div class="stat-value" style="color:var(--primary)">${total}</div>
+                    </div>
+                    <div class="stat-footer">Toutes tâches confondues</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">Terminées</div>
+                        <div class="stat-value text-success">${done}</div>
+                    </div>
+                    <div class="stat-footer">${donePct}% du total</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">En Retard</div>
+                        <div class="stat-value text-danger">${late}</div>
+                    </div>
+                    <div class="stat-footer">À traiter en urgence</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">En Cours</div>
+                        <div class="stat-value" style="color:var(--warning)">${inProgress}</div>
+                    </div>
+                    <div class="stat-footer">Actives</div>
+                </div>
+            </div>
 
-    /** VUE 2 : GANTT (AVEC DRAG & DROP) **/
-    function renderGantt(container) {
-        const tasks = state.filteredRecords
-            .filter(r => r.StartDate && r.EndDate)
-            .map(r => ({...r, start: Utils.fromGristDate(r.StartDate), end: Utils.fromGristDate(r.EndDate)}))
-            .sort((a,b) => a.start - b.start);
+            <div class="charts-row">
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Priorité</h4>
+                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
+                </div>
 
-        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche avec dates.</div>'; return; }
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Administration</h4>
+                    ${renderBarChart(data, 'Team', null)}
+                </div>
+                
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Prochaines Échéances</h4>
+                    <table class="mini-table">
+                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100)
+                              .sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate))
+                              .slice(0,5)
+                              .map(r => `
+                                <tr>
+                                    <td><strong>${r.Title}</strong></td>
+                                    <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
+                                </tr>
+                              `).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
+                    </table>
+                </div>
+            </div>
+        `;
+    }
 
-        let min = new Date(Math.min(...tasks.map(t => t.start))).getTime();
-        let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
-        const padding = 86400000 * 2; 
-        min -= padding; max += padding;
-        const span = max - min; // Milliseconds Span
+    function renderBarChart(data, key, colorMap) {
+        const counts = {};
+        data.forEach(r => { 
+            const k = r[key] || 'Non défini'; 
+            counts[k] = (counts[k] || 0) + 1; 
+        });
+        const max = Math.max(...Object.values(counts), 1);
+        
+        return Object.keys(counts).map(k => {
+            const count = counts[k];
+            const pct = (count / max) * 100;
+            const color = colorMap ? (colorMap[k] || '#ccc') : Utils.stringToColor(k);
+            return `
+                <div class="bar-group">
+                    <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width:${pct}%; background:${color}"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
-        let html = `
-            <div class="gantt-wrapper">
-                <div class="gantt-header">
-                    <span>Tâche</span>
-                    <span style="text-align:right">Période: ${Utils.formatDate(new Date(min))} - ${Utils.formatDate(new Date(max))}</span>
-                </div>`;
-        
-        tasks.forEach(t => {
-            const left = ((t.start.getTime() - min) / span) * 100;
-            const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
-            const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
-            
-            // Note: on ajoute des attributs data- pour le drag
-            html += `
-                <div class="gantt-line">
-                    <div class="gantt-text" title="${t.Title}" onclick="openModal(${t.id})">${t.Title}</div>
-                    <div class="gantt-timeline" id="timeline-${t.id}">
-                        <div class="gantt-block" 
-                             id="block-${t.id}"
-                             style="left:${left}%; width:${width}%; background:${color}" 
-                             title="${t.Title} (${t.Progress}%)"
-                             onmousedown="handleDragStart(event, ${t.id}, ${min}, ${span}, ${t.start.getTime()}, ${t.end.getTime()})">
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-        container.innerHTML = html;
+    /** VUE 2 : GANTT **/
+    function renderGantt(container) {
+        const tasks = state.filteredRecords
+            .filter(r => r.StartDate && r.EndDate)
+            .map(r => ({...r, start: Utils.fromGristDate(r.StartDate), end: Utils.fromGristDate(r.EndDate)}))
+            .sort((a,b) => a.start - b.start);
 
-        // Listeners globaux pour le drag (attachés à window pour éviter de perdre le drag si on sort de la div)
-        // On les ajoute une seule fois pour éviter les doublons
-        if(!window.dragListenersAttached) {
-            window.addEventListener('mousemove', handleDragMove);
-            window.addEventListener('mouseup', handleDragEnd);
-            window.dragListenersAttached = true;
-        }
-    }
+        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche avec dates.</div>'; return; }
 
-    // --- DRAG & DROP LOGIC ---
-    function handleDragStart(e, id, minTime, spanTime, startTime, endTime) {
-        e.preventDefault(); // Empêche la sélection de texte
-        e.stopPropagation(); // Empêche l'ouverture modale si cliqué
-        
-        const block = document.getElementById(`block-${id}`);
-        const timeline = document.getElementById(`timeline-${id}`);
-        
-        dragState = {
-            isDragging: true,
-            element: block,
-            recordId: id,
-            startX: e.clientX,
-            initialLeft: parseFloat(block.style.left), // en %
-            timelineWidth: timeline.offsetWidth, // en px
-            minTime: minTime,
-            spanTime: spanTime,
-            originalStart: startTime,
-            originalEnd: endTime,
-            hasMoved: false
-        };
-    }
+        let min = new Date(Math.min(...tasks.map(t => t.start))).getTime();
+        let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
+        const padding = 86400000 * 2; // +2 jours marge
+        min -= padding; max += padding;
+        const span = max - min;
 
-    function handleDragMove(e) {
-        if (!dragState.isDragging || !dragState.element) return;
-        
-        const deltaPixels = e.clientX - dragState.startX;
-        // Conversion pixels -> %
-        const deltaPercent = (deltaPixels / dragState.timelineWidth) * 100;
-        
-        // Nouvelle position visuelle
-        dragState.element.style.left = (dragState.initialLeft + deltaPercent) + '%';
-        dragState.hasMoved = true;
-    }
+        let html = `
+            <div class="gantt-wrapper">
+                <div class="gantt-header">
+                    <span>Tâche</span>
+                    <span style="text-align:right">Période: ${Utils.formatDate(new Date(min))} - ${Utils.formatDate(new Date(max))}</span>
+                </div>`;
+        
+        tasks.forEach(t => {
+            const left = ((t.start.getTime() - min) / span) * 100;
+            const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
+            const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
+            
+            html += `
+                <div class="gantt-line" onclick="openModal(${t.id})">
+                    <div class="gantt-text" title="${t.Title}">${t.Title}</div>
+                    <div class="gantt-timeline">
+                        <div class="gantt-block" style="left:${left}%; width:${width}%; background:${color}" title="${t.Title} (${t.Progress}%)"></div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+        container.innerHTML = html;
+    }
 
-    async function handleDragEnd(e) {
-        if (!dragState.isDragging) return;
+    /** VUE 3 : LISTE **/
+    function renderList(container) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'task-list';
+        
+        if(!state.filteredRecords.length) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>';
+            return;
+        }
 
-        if (dragState.hasMoved) {
-            const deltaPixels = e.clientX - dragState.startX;
-            // Conversion Pixels -> Milliseconds
-            // (Pixels / TotalWidth) * TotalTimeSpan
-            const deltaPercent = deltaPixels / dragState.timelineWidth;
-            const deltaMs = deltaPercent * dragState.spanTime;
+        state.filteredRecords.forEach(r => {
+            const card = document.createElement('div');
+            // Classe de priorité pour la couleur bordure gauche
+            const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
+            card.className = `task-card ${prioClass}`;
+            
+            // Clic carte -> Edit Modal
+            card.onclick = () => openModal(r.id);
 
-            // Calcul arrondis en Jours
-            const newStart = new Date(dragState.originalStart + deltaMs);
-            const newEnd = new Date(dragState.originalEnd + deltaMs);
+            const badges = [];
+            if(r.Team) badges.push({t: r.Team, c: Utils.stringToColor(r.Team)});
+            if(r.Project) badges.push({t: r.Project, c: Utils.stringToColor(r.Project)});
 
-            // Mise à jour Grist
-            try {
-                await grist.selectedTable.update({
-                    id: dragState.recordId,
-                    fields: {
-                        StartDate: Utils.toGristDate(newStart),
-                        EndDate: Utils.toGristDate(newEnd)
-                    }
-                });
-            } catch (err) {
-                console.error("Erreur update date", err);
-                renderCurrentView(); // Reset visuel si erreur
-            }
-        } else {
-            // Si c'était juste un click sans mouvement, on ouvre la modale
-            openModal(dragState.recordId);
-        }
+            card.innerHTML = `
+                <div class="card-top">
+                    <h3 class="card-h3">${r.Title || 'Sans Titre'}</h3>
+                    ${r.Priority ? `<span style="font-size:10px; font-weight:700; color:#666">${r.Priority}</span>` : ''}
+                </div>
+                <div class="card-tags">
+                    ${badges.map(b => `<span class="tag" style="background:${b.c}">${b.t}</span>`).join('')}
+                </div>
+                <div class="card-btm">
+                    <div class="avatar-row">
+                        <span>👤 ${r.Assignee || 'Non assigné'}</span>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center">
+                        <span>📅 ${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</span>
+                        ${r.Progress !== undefined ? `<strong>${r.Progress}%</strong>` : ''}
+                    </div>
+                </div>
+            `;
+            listDiv.appendChild(card);
+        });
+        container.appendChild(listDiv);
+    }
 
-        dragState.isDragging = false;
-        dragState.element = null;
-    }
+    // --- 6. GESTION MODALE (CRUD COMPLET) ---
+    
+    // Remplit les datalists (Autocomplétion créative)
+    function populateDatalists() {
+        const fill = (id, list) => {
+            document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join('');
+        };
+        fill('list-teams', state.uniqueTeams);
+        fill('list-projects', state.uniqueProjects);
+        fill('list-assignees', state.uniqueAssignees);
+    }
 
+    function openModal(recordId = null) {
+        populateDatalists(); // Rafraîchir les listes
+        
+        const modal = document.getElementById('modal');
+        const title = document.getElementById('modal-title');
+        
+        // Reset Form
+        document.getElementById('input-id').value = '';
+        document.getElementById('input-title').value = '';
+        document.getElementById('input-team').value = '';
+        document.getElementById('input-project').value = '';
+        document.getElementById('input-assignee').value = '';
+        document.getElementById('input-priority').value = 'Medium';
+        document.getElementById('input-start').value = '';
+        document.getElementById('input-end').value = '';
+        document.getElementById('input-progress').value = 0;
+        document.getElementById('range-progress').value = 0;
 
-    /** VUE 3 : LISTE **/
-    function renderList(container) {
-        const listDiv = document.createElement('div');
-        listDiv.className = 'task-list';
-        
-        if(!state.filteredRecords.length) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>';
-            return;
-        }
+        if (recordId) {
+            // MODE EDITION
+            const r = state.allRecords.find(x => x.id === recordId);
+            if (r) {
+                title.innerText = "Modifier la Tâche";
+                document.getElementById('input-id').value = r.id;
+                document.getElementById('input-title').value = r.Title || '';
+                document.getElementById('input-team').value = r.Team || '';
+                document.getElementById('input-project').value = r.Project || '';
+                document.getElementById('input-assignee').value = r.Assignee || '';
+                document.getElementById('input-priority').value = r.Priority || 'Medium';
+                document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
+                document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
+                const prog = r.Progress || 0;
+                document.getElementById('input-progress').value = prog;
+                document.getElementById('range-progress').value = prog;
+                
+                // Sélectionner aussi dans Grist pour le focus
+                grist.setSelectedRows([r.id]);
+            }
+        } else {
+            // MODE CREATION
+            title.innerText = "Nouvelle Tâche";
+            // Pré-remplir avec les filtres actuels s'ils sont actifs
+            if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
+            if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
+            
+            // Dates par défaut (Aujourd'hui)
+            const today = Utils.inputDate(new Date());
+            document.getElementById('input-start').value = today;
+            document.getElementById('input-end').value = today;
+        }
 
-        state.filteredRecords.forEach(r => {
-            const card = document.createElement('div');
-            const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
-            card.className = `task-card ${prioClass}`;
-            card.onclick = () => openModal(r.id);
+        modal.classList.add('open');
+    }
 
-            const badges = [];
-            if(r.Team) badges.push({t: r.Team, c: Utils.stringToColor(r.Team)});
-            if(r.Project) badges.push({t: r.Project, c: Utils.stringToColor(r.Project)});
+    function closeModal() {
+        document.getElementById('modal').classList.remove('open');
+    }
 
-            card.innerHTML = `
-                <div class="card-top">
-                    <h3 class="card-h3">${r.Title || 'Sans Titre'}</h3>
-                    ${r.Priority ? `<span style="font-size:10px; font-weight:700; color:#666">${r.Priority}</span>` : ''}
-                </div>
-                <div class="card-tags">
-                    ${badges.map(b => `<span class="tag" style="background:${b.c}">${b.t}</span>`).join('')}
-                </div>
-                <div class="card-btm">
-                    <div class="avatar-row"><span>👤 ${r.Assignee || 'Non assigné'}</span></div>
-                    <div style="display:flex; gap:10px; align-items:center">
-                        <span>📅 ${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</span>
-                        ${r.Progress !== undefined ? `<strong>${r.Progress}%</strong>` : ''}
-                    </div>
-                </div>
-            `;
-            listDiv.appendChild(card);
-        });
-        container.appendChild(listDiv);
-    }
+    async function saveTask() {
+        const id = document.getElementById('input-id').value; // String, vide si création
+        
+        // Récupération des valeurs
+        // Note: Pour les champs Choice (Team, Project), Grist acceptera la nouvelle valeur texte
+        // si la colonne est configurée pour, ou si c'est une colonne Texte simple.
+        const fields = {
+            Title: document.getElementById('input-title').value || 'Nouvelle Tâche',
+            Team: document.getElementById('input-team').value,
+            Project: document.getElementById('input-project').value,
+            Assignee: document.getElementById('input-assignee').value,
+            Priority: document.getElementById('input-priority').value,
+            StartDate: Utils.toGristDate(new Date(document.getElementById('input-start').value)),
+            EndDate: Utils.toGristDate(new Date(document.getElementById('input-end').value)),
+            Progress: parseInt(document.getElementById('input-progress').value) || 0
+        };
 
-    // --- 6. GESTION MODALE (CRUD COMPLET) ---
-    function populateDatalists() {
-        const fill = (id, list) => { document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join(''); };
-        fill('list-teams', state.uniqueTeams);
-        fill('list-projects', state.uniqueProjects);
-        fill('list-assignees', state.uniqueAssignees);
-    }
+        try {
+            if (id) {
+                // UPDATE
+                await grist.selectedTable.update({ id: parseInt(id), fields });
+            } else {
+                // CREATE
+                await grist.selectedTable.create({ fields });
+            }
+            closeModal();
+        } catch (e) {
+            console.error(e);
+            alert("Erreur lors de la sauvegarde. Vérifiez les droits d'accès ou les noms de colonnes.");
+        }
+    }
 
-    function openModal(recordId = null) {
-        populateDatalists();
-        const modal = document.getElementById('modal');
-        const title = document.getElementById('modal-title');
-        
-        // Reset Form
-        document.getElementById('input-id').value = '';
-        document.getElementById('input-title').value = '';
-        document.getElementById('input-team').value = '';
-        document.getElementById('input-project').value = '';
-        document.getElementById('input-assignee').value = '';
-        document.getElementById('input-priority').value = 'Medium';
-        document.getElementById('input-start').value = '';
-        document.getElementById('input-end').value = '';
-        document.getElementById('input-progress').value = 0;
-        document.getElementById('range-progress').value = 0;
-
-        if (recordId) {
-            const r = state.allRecords.find(x => x.id === recordId);
-            if (r) {
-                title.innerText = "Modifier la Tâche";
-                document.getElementById('input-id').value = r.id;
-                document.getElementById('input-title').value = r.Title || '';
-                document.getElementById('input-team').value = r.Team || '';
-                document.getElementById('input-project').value = r.Project || '';
-                document.getElementById('input-assignee').value = r.Assignee || '';
-                document.getElementById('input-priority').value = r.Priority || 'Medium';
-                document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
-                document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
-                const prog = r.Progress || 0;
-                document.getElementById('input-progress').value = prog;
-                document.getElementById('range-progress').value = prog;
-                grist.setSelectedRows([r.id]);
-            }
-        } else {
-            title.innerText = "Nouvelle Tâche";
-            if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
-            if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
-            const today = Utils.inputDate(new Date());
-            document.getElementById('input-start').value = today;
-            document.getElementById('input-end').value = today;
-        }
-        modal.classList.add('open');
-    }
-
-    function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-    async function saveTask() {
-        const id = document.getElementById('input-id').value;
-        const fields = {
-            Title: document.getElementById('input-title').value || 'Nouvelle Tâche',
-            Team: document.getElementById('input-team').value,
-            Project: document.getElementById('input-project').value,
-            Assignee: document.getElementById('input-assignee').value,
-            Priority: document.getElementById('input-priority').value,
-            StartDate: Utils.toGristDate(new Date(document.getElementById('input-start').value)),
-            EndDate: Utils.toGristDate(new Date(document.getElementById('input-end').value)),
-            Progress: parseInt(document.getElementById('input-progress').value) || 0
-        };
-
-        try {
-            if (id) await grist.selectedTable.update({ id: parseInt(id), fields });
-            else await grist.selectedTable.create({ fields });
-            closeModal();
-        } catch (e) {
-            console.error(e);
-            alert("Erreur lors de la sauvegarde.");
-        }
-    }
-
-    document.getElementById('input-progress').addEventListener('input', function() {
-        document.getElementById('range-progress').value = this.value;
-    });
+    // Synchro Range/Number pour le slider de progression
+    document.getElementById('input-progress').addEventListener('input', function() {
+        document.getElementById('range-progress').value = this.value;
+    });
 </script>
 </body>
 </html>
