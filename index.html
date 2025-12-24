@@ -1,806 +1,737 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Ultimate</title>
-    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-    <style>
-        /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
-        :root {
-            --primary: var(--grist-theme-cursor, #2563eb);
-            --primary-light: #eff6ff;
-            --bg: var(--grist-theme-page-bg, #f8fafc);
-            --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-sec: #64748b;
-            --border: #e2e8f0;
-            
-            /* Couleurs Sémantiques */
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grist Task & Gantt Manager Pro v4</title>
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <style>
+    /* --- THEME VARS --- */
+    :root {
+      --color-primary: var(--grist-theme-cursor, #16b378);
+      --color-bg: var(--grist-theme-page-bg, white);
+      --color-text: var(--grist-theme-text, black);
+      --color-border: var(--grist-theme-border, #ccc);
+      --color-hover: var(--grist-theme-hover, #f0f0f0);
+      --color-normal: #5bc0de;
+      --color-high: #d9534f;
+      --color-low: #777;
+    }
 
-            /* Formes */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none; /* Important pour le Drag & Drop */
+    }
 
-        * { box-sizing: border-box; outline: none; }
+    /* --- TOP BAR --- */
+    #top-bar {
+      padding: 10px 15px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--color-bg);
+      z-index: 20;
+    }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            font-size: 14px;
-            line-height: 1.5;
-            padding-bottom: 80px; /* Espace pour le FAB mobile */
-        }
+    .stats-container {
+      display: flex;
+      gap: 20px;
+      font-weight: 600;
+      font-size: 14px;
+    }
 
-        /* --- 2. LAYOUT & NAVIGATION --- */
-        .app-header {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+    .stat-total { color: black; }
+    .stat-progress { color: #0056b3; }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
 
-        h1.app-logo {
-            font-size: 22px;
-            font-weight: 800;
-            margin: 0;
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
+    select, button {
+      padding: 6px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      background: var(--color-bg);
+      color: var(--color-text);
+      cursor: pointer;
+    }
 
-        /* Onglets (Pills Design) */
-        .nav-pills {
-            display: flex;
-            background: #e2e8f0;
-            padding: 4px;
-            border-radius: var(--radius-lg);
-            width: fit-content;
-            gap: 4px;
-        }
+    button.primary {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+    }
+    
+    button.secondary {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+    }
 
-        .nav-item {
-            padding: 8px 20px;
-            border-radius: var(--radius-md);
-            border: none;
-            background: transparent;
-            color: var(--text-sec);
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+    /* --- LAYOUT --- */
+    #main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
 
-        .nav-item.active {
-            background: var(--surface);
-            color: var(--text-main);
-            box-shadow: var(--shadow-sm);
-        }
+    /* --- LISTE DES TÂCHES --- */
+    #task-list {
+      width: 350px;
+      border-right: 1px solid var(--color-border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      background: var(--color-bg);
+    }
 
-        /* --- 3. ACTIONS & FILTRES --- */
-        .toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+    .task-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .task-item:hover { background-color: var(--color-hover); }
 
-        .select-modern {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            background: var(--surface);
-            color: var(--text-main);
-            font-size: 13px;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 16px;
-        }
+    .task-checkbox { width: 18px; height: 18px; cursor: pointer; }
+    .task-content { flex: 1; }
+    .task-title { font-weight: 600; display: block; margin-bottom: 4px; }
+    .task-meta { font-size: 11px; color: #666; display: flex; gap: 8px; }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: var(--shadow-md);
-            transition: transform 0.1s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .badge { padding: 2px 6px; border-radius: 10px; color: white; font-size: 10px; text-transform: uppercase; }
+    .badge.high { background-color: var(--color-high); }
+    .badge.normal { background-color: var(--color-normal); }
+    .badge.low { background-color: var(--color-low); }
 
-        .btn-primary:active { transform: scale(0.98); }
+    /* --- GANTT --- */
+    #gantt-container {
+      flex: 1;
+      overflow: auto; /* Scroll interne */
+      position: relative;
+      background: var(--color-bg);
+      cursor: grab;
+    }
+    
+    #gantt-container.dragging {
+      cursor: grabbing;
+      user-select: none;
+    }
 
-        /* --- 4. VUES (Transitions) --- */
-        .view-container { display: none; animation: fadeIn 0.4s ease; }
-        .view-container.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    #gantt-header {
+      position: sticky;
+      top: 0;
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-border);
+      height: 45px;
+      white-space: nowrap;
+      z-index: 10;
+      display: flex;
+    }
 
-        /* VUE 1: TABLEAU DE BORD (Grid) */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+    .gantt-time-col {
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      background: var(--color-bg);
+    }
+    .week-number { font-size: 9px; color: #888; margin-top: 2px; }
 
-        .stat-card {
-            background: var(--surface);
-            padding: 20px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+    #gantt-body {
+      position: relative;
+      min-height: 100%;
+    }
 
-        .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-sec); letter-spacing: 0.5px; }
-        .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
-        .stat-footer { font-size: 12px; color: var(--text-sec); display: flex; align-items: center; gap: 4px; }
+    .gantt-row {
+      height: 51px;
+      border-bottom: 1px solid var(--color-border);
+      position: relative;
+      box-sizing: border-box;
+    }
 
-        .section-title { font-size: 16px; font-weight: 700; margin: 30px 0 16px 0; color: var(--text-main); }
-        
-        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
-        
-        /* Barres de progression custom */
-        .bar-group { margin-bottom: 12px; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
-        .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 4px; }
+    .gantt-bar {
+      position: absolute;
+      top: 12px;
+      height: 26px;
+      background-color: var(--color-primary);
+      border-radius: 4px;
+      opacity: 0.9;
+      font-size: 11px;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      cursor: grab; /* Curseur main */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: box-shadow 0.1s;
+      z-index: 5;
+    }
 
-        /* Table minimaliste "À venir" */
-        .mini-table { width: 100%; border-collapse: collapse; }
-        .mini-table td { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .mini-table tr:last-child td { border-bottom: none; }
+    .gantt-bar:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 6; /* Passer au dessus */
+    }
 
-        /* VUE 2: GANTT */
-        .gantt-wrapper {
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            overflow-x: auto;
-            padding: 16px;
-        }
-        .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
-        .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
-        .gantt-block { position: absolute; height: 16px; top: 4px; border-radius: 4px; min-width: 8px; cursor: pointer; transition: opacity 0.2s; }
-        .gantt-block:hover { opacity: 0.8; }
+    .gantt-bar.dragging-active {
+      cursor: grabbing;
+      opacity: 0.7;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+      z-index: 100;
+    }
+    
+    .gantt-bar.done { background-color: #888; text-decoration: line-through; }
 
-        /* VUE 3: LISTE */
-        .task-list { display: flex; flex-direction: column; gap: 12px; }
-        .task-card {
-            background: var(--surface);
-            padding: 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cbd5e1; }
-        
-        .priority-high::before { background: var(--danger); }
-        .priority-medium::before { background: var(--warning); }
-        .priority-low::before { background: var(--success); }
+    /* Ligne Rouge Date du Jour */
+    #current-day-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: red;
+      z-index: 4;
+      pointer-events: none;
+      display: none; /* Caché par défaut, activé par JS */
+    }
+    #current-day-label {
+        position: absolute;
+        top: -22px;
+        left: -20px;
+        background: red;
+        color: white;
+        padding: 2px 4px;
+        font-size: 10px;
+        border-radius: 3px;
+        white-space: nowrap;
+    }
 
-        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .card-h3 { font-size: 15px; font-weight: 700; margin: 0; }
-        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; color: #fff; }
-        
-        .card-btm { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sec); }
-        .avatar-row { display: flex; align-items: center; gap: 6px; }
+    /* --- MODAL --- */
+    #modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+    .modal {
+      background: var(--color-bg);
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .modal h3 { margin-top: 0; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+    .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 8px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
-        /* --- 5. MODALE (EDITION/CREATION) --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(4px);
-            z-index: 999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
-
-        .modal-box {
-            background: var(--surface);
-            width: 100%;
-            max-width: 500px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-        }
-        
-        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-sec); }
-        
-        .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-        
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
-        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
-        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
-        
-        /* Helper colors */
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        
-        /* Loading */
-        .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
-    </style>
+    /* --- PRINT / PDF EXPORT --- */
+    @media print {
+      body { height: auto; overflow: visible; background: white; }
+      #top-bar, #task-list, #modal-overlay { display: none !important; }
+      
+      #main-container { display: block; overflow: visible; }
+      #gantt-container { 
+        overflow: visible; 
+        width: 100%; 
+        border: none;
+      }
+      #gantt-header {
+        position: static; /* Pas de sticky en print */
+        border-bottom: 2px solid #000;
+      }
+      .gantt-row {
+        page-break-inside: avoid;
+        border-bottom: 1px solid #ccc;
+      }
+      /* Force landscape suggestion (Chrome) */
+      @page { size: landscape; margin: 1cm; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="header-top">
-            <h1 class="app-logo">Gantt'FIP</h1>
-            <button class="btn-primary" onclick="openModal()">
-                <span>+ Nouvelle Tâche</span>
-            </button>
-        </div>
-        
-        <nav class="nav-pills">
-            <button class="nav-item active" onclick="switchView('dashboard')">Tableau de Bord</button>
-            <button class="nav-item" onclick="switchView('gantt')">Gantt</button>
-            <button class="nav-item" onclick="switchView('list')">Liste</button>
-        </nav>
-    </div>
+  <script>
+    // --- UTILS (NON-REGRESSION) ---
+    function gristDateToJS(value) {
+      if (!value && value !== 0) return null;
+      return value > 100000 ? new Date(value * 1000) : new Date(value * 24 * 60 * 60 * 1000);
+    }
 
-    <div class="toolbar">
-        <select id="filter-team" class="select-modern" onchange="handleFilters()">
-            <option value="all">Toutes les administrations</option>
-        </select>
-        <select id="filter-project" class="select-modern" onchange="handleFilters()">
-            <option value="all">Tous les projets</option>
-        </select>
-    </div>
+    function jsDateToGrist(date) {
+      if (!date) return null;
+      const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+      return Math.floor(utcDate / (24 * 60 * 60 * 1000));
+    }
 
-    <div id="app-content">
-        <div class="loading">Chargement des données...</div>
-    </div>
+    function convertGristTableToRecords(tableData) {
+      if (!tableData || Array.isArray(tableData)) return tableData || [];
+      const columns = Object.keys(tableData);
+      if (!columns.length) return [];
+      const rowCount = tableData[columns[0]]?.length || 0;
+      const records = [];
+      for (let i = 0; i < rowCount; i++) {
+        const record = { id: tableData.id[i] };
+        columns.forEach(col => record[col] = tableData[col][i]);
+        records.push(record);
+      }
+      return records;
+    }
 
-    <div id="modal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 id="modal-title" class="modal-title">Nouvelle Tâche</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="input-id">
-                
-                <div class="form-group">
-                    <label class="form-label">Titre de la tâche</label>
-                    <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
-                </div>
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    }
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Administration (Team)</label>
-                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-teams"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Projet</label>
-                        <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-projects"></datalist>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Responsable</label>
-                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
-                        <datalist id="list-assignees"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priorité</label>
-                        <select id="input-priority" class="form-input">
-                            <option value="Low">Low (Basse)</option>
-                            <option value="Medium" selected>Medium (Moyenne)</option>
-                            <option value="High">High (Haute)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Date de Début</label>
-                        <input type="date" id="input-start" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date de Fin</label>
-                        <input type="date" id="input-end" class="form-input">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Progression (%)</label>
-                    <input type="number" id="input-progress" class="form-input" min="0" max="100" value="0">
-                    <input type="range" id="range-progress" min="0" max="100" value="0" style="margin-top:8px" oninput="document.getElementById('input-progress').value = this.value">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-sec" onclick="closeModal()">Annuler</button>
-                <button class="btn-primary" onclick="saveTask()">Enregistrer</button>
-            </div>
-        </div>
-    </div>
-
-<script>
-    /**
-     * ===========================================
-     * GANTT'FIP ULTIMATE - V6 ENGINE
-     * ===========================================
-     */
-
-    // --- 1. CONFIGURATION STRICTE ---
-    const MAPPING = [
-        { name: 'Title',     title: 'Titre' },
-        { name: 'Assignee',  title: 'Responsable' },
-        { name: 'Team',      title: 'Administration' },
-        { name: 'Project',   title: 'Projet' },
-        { name: 'StartDate', title: 'Début', type: 'Date' },
-        { name: 'EndDate',   title: 'Fin',   type: 'Date' },
-        { name: 'Progress',  title: 'Progression', type: 'Numeric' },
-        { name: 'Priority',  title: 'Priorité', type: 'Choice' }
-    ];
-
-    // STATE MANAGEMENT
-    let state = {
-        allRecords: [],
-        filteredRecords: [],
-        filters: { team: 'all', project: 'all' },
-        currentView: 'dashboard',
-        uniqueTeams: [],
-        uniqueProjects: [],
-        uniqueAssignees: []
+    // --- STATE ---
+    let allRecords = [];
+    let displayedRecords = [];
+    let currentView = 'day'; 
+    let scale = 40; 
+    let uniqueTags = []; 
+    let uniqueAgents = [];
+    
+    // Drag & Drop State
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragOriginalLeft = 0;
+    let draggedElement = null;
+    let draggedRecordId = null;
+    let draggedRecordStart = null;
+    let draggedRecordEnd = null;
+    
+    const COL_MAP = {
+      title: 'TaskName',   
+      start: 'StartDate',  
+      due: 'DueDate',      
+      status: 'Status',    
+      priority: 'Priority',
+      owner: 'Responsable', 
+      tags: 'Occurence'     
     };
+  </script>
 
-    // --- 2. UTILITAIRES ---
-    const Utils = {
-        // Date Grist (Sec vs Days)
-        fromGristDate: (val) => {
-            if (!val && val !== 0) return null;
-            return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
-        },
-        toGristDate: (dateObj) => {
-            if (!dateObj) return null;
-            const utc = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            return Math.floor(utc / 86400000);
-        },
-        formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
-        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', // Pour input type="date"
-        
-        // Couleur HASH consistante
-        stringToColor: (str) => {
-            if (!str) return '#94a3b8';
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            const h = Math.abs(hash) % 360;
-            return `hsl(${h}, 70%, 45%)`;
-        },
+  <div id="top-bar">
+    <div class="stats-container">
+      <span class="stat-total">Total: <span id="count-total">0</span></span>
+      <span class="stat-progress">En cours: <span id="count-progress">0</span></span>
+    </div>
+    <div class="controls">
+      <select id="agent-filter" onchange="applyFilters()">
+        <option value="all">Tous les agents</option>
+      </select>
+      <select id="view-selector" onchange="changeView(this.value)">
+        <option value="day">Jour</option>
+        <option value="week">Semaine</option>
+        <option value="month">Mois</option>
+      </select>
+      <button class="secondary" onclick="exportPDF()">🖨️ PDF / Print</button>
+      <button class="primary" onclick="openModal()">+ Nouvelle Tâche</button>
+    </div>
+  </div>
 
-        // Nettoyage données Table -> Liste d'objets
-        cleanData: (data) => {
-            if (Array.isArray(data)) return data;
-            if (!data) return [];
-            const cols = Object.keys(data);
-            if (!cols.length) return [];
-            const rows = [];
-            for(let i=0; i<data[cols[0]].length; i++) {
-                let rec = { id: data.id[i] };
-                cols.forEach(c => { if(c!=='id') rec[c] = data[c][i]; });
-                rows.push(rec);
-            }
-            return rows;
-        }
-    };
+  <div id="main-container">
+    <div id="task-list"></div>
+    <div id="gantt-container">
+      <div id="gantt-header"></div>
+      <div id="gantt-body">
+         <div id="current-day-line"><div id="current-day-label">Aujourd'hui</div></div>
+      </div>
+    </div>
+  </div>
 
-    // --- 3. INIT & EVENTS GRIST ---
-    grist.ready({ columns: MAPPING, requiredAccess: 'full' });
+  <div id="modal-overlay">
+    <div class="modal">
+      <h3>Nouvelle Tâche</h3>
+      <form id="new-task-form" onsubmit="submitTask(event)">
+        <div class="form-group">
+          <label>Titre</label>
+          <input type="text" id="input-title" required>
+        </div>
+        <div class="form-group" style="display:flex; gap:10px;">
+          <div style="flex:1"><label>Début</label><input type="date" id="input-start" required></div>
+          <div style="flex:1"><label>Échéance</label><input type="date" id="input-due" required></div>
+        </div>
+        <div class="form-group">
+          <label>Responsable</label>
+          <input type="text" id="input-owner">
+        </div>
+        <div class="form-group">
+          <label>Occurrence</label>
+          <select id="input-tags"><option value="">-- Sélectionner --</option></select>
+        </div>
+        <div class="form-group">
+          <label>Priorité</label>
+          <select id="input-priority">
+            <option value="Normal">Normal</option>
+            <option value="High">Haute</option>
+            <option value="Low">Basse</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    grist.onRecords(data => {
-        state.allRecords = Utils.cleanData(data);
-        extractUniqueValues();
-        updateFilterSelects();
-        handleFilters(); // Déclenche le render
+  <script>
+    grist.ready({
+      requiredAccess: 'full',
+      columns: [
+        { name: COL_MAP.title, type: 'Text', title: 'Titre' },
+        { name: COL_MAP.start, type: 'Date', title: 'Début' },
+        { name: COL_MAP.due, type: 'Date', title: 'Fin' },
+        { name: COL_MAP.status, type: 'Choice', title: 'Statut' },
+        { name: COL_MAP.priority, type: 'Choice', title: 'Priorité' },
+        { name: COL_MAP.owner, type: 'Text', title: 'Responsable' },
+        { name: COL_MAP.tags, type: 'Text', title: 'Occurrence' }
+      ]
+    });
+
+    grist.onRecords(function(data) {
+      allRecords = convertGristTableToRecords(data);
+      extractUniqueValues();
+      applyFilters();
     });
 
     function extractUniqueValues() {
-        state.uniqueTeams = [...new Set(state.allRecords.map(r => r.Team).filter(Boolean))].sort();
-        state.uniqueProjects = [...new Set(state.allRecords.map(r => r.Project).filter(Boolean))].sort();
-        state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
+      const tagSet = new Set();
+      const agentSet = new Set();
+      allRecords.forEach(r => {
+        if(r[COL_MAP.tags]) tagSet.add(r[COL_MAP.tags]);
+        if(r[COL_MAP.owner]) agentSet.add(r[COL_MAP.owner]);
+      });
+      uniqueTags = Array.from(tagSet).sort();
+      uniqueAgents = Array.from(agentSet).sort();
+
+      const filterSelect = document.getElementById('agent-filter');
+      const currentVal = filterSelect.value;
+      filterSelect.innerHTML = '<option value="all">Tous les agents</option>';
+      uniqueAgents.forEach(agent => {
+        const opt = document.createElement('option');
+        opt.value = agent;
+        opt.textContent = agent;
+        filterSelect.appendChild(opt);
+      });
+      filterSelect.value = currentVal;
     }
 
-    // --- 4. LOGIQUE FILTRES ---
-    function updateFilterSelects() {
-        // Conserve sélection user
-        const tVal = document.getElementById('filter-team').value;
-        const pVal = document.getElementById('filter-project').value;
-
-        const tSelect = document.getElementById('filter-team');
-        const pSelect = document.getElementById('filter-project');
-
-        tSelect.innerHTML = `<option value="all">Toutes les administrations</option>` + 
-            state.uniqueTeams.map(t => `<option value="${t}">${t}</option>`).join('');
-        
-        pSelect.innerHTML = `<option value="all">Tous les projets</option>` + 
-            state.uniqueProjects.map(p => `<option value="${p}">${p}</option>`).join('');
-
-        if(state.uniqueTeams.includes(tVal)) tSelect.value = tVal;
-        if(state.uniqueProjects.includes(pVal)) pSelect.value = pVal;
+    function applyFilters() {
+      const agentFilter = document.getElementById('agent-filter').value;
+      displayedRecords = allRecords.filter(r => {
+        if (agentFilter !== 'all' && r[COL_MAP.owner] !== agentFilter) return false;
+        return true;
+      });
+      
+      document.getElementById('count-total').textContent = displayedRecords.length;
+      document.getElementById('count-progress').textContent = displayedRecords.filter(r => r[COL_MAP.status] === 'In Progress').length;
+      
+      render();
     }
 
-    function handleFilters() {
-        state.filters.team = document.getElementById('filter-team').value;
-        state.filters.project = document.getElementById('filter-project').value;
-
-        state.filteredRecords = state.allRecords.filter(r => {
-            const teamOk = state.filters.team === 'all' || r.Team === state.filters.team;
-            const projOk = state.filters.project === 'all' || r.Project === state.filters.project;
-            return teamOk && projOk;
-        });
-
-        renderCurrentView();
+    async function toggleStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'Done' ? 'In Progress' : 'Done';
+      await grist.selectedTable.update([{ id: id, [COL_MAP.status]: newStatus }]);
     }
 
-    function switchView(view) {
-        state.currentView = view;
-        // Update tabs UI
-        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
-        renderCurrentView();
+    // --- EXPORT PDF ---
+    function exportPDF() {
+      window.print();
     }
 
-    function renderCurrentView() {
-        const container = document.getElementById('app-content');
-        container.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'view-container active';
-
-        if(state.currentView === 'dashboard') renderDashboard(wrapper);
-        else if(state.currentView === 'gantt') renderGantt(wrapper);
-        else renderList(wrapper);
-
-        container.appendChild(wrapper);
+    // --- RENDER ---
+    function render() {
+      renderList();
+      renderGantt();
     }
 
-    // --- 5. MOTEURS DE RENDU ---
+    function renderList() {
+      const container = document.getElementById('task-list');
+      container.innerHTML = '';
+      displayedRecords.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'task-item';
+        const isDone = r[COL_MAP.status] === 'Done';
+        const priority = r[COL_MAP.priority] || 'Normal';
+        let priorityClass = 'normal'; 
+        if(priority === 'High') priorityClass = 'high';
+        if(priority === 'Low') priorityClass = 'low';
 
-    /** VUE 1 : DASHBOARD **/
-    function renderDashboard(container) {
-        const data = state.filteredRecords;
-        const total = data.length;
-        const now = new Date();
-
-        // Stats
-        const done = data.filter(r => (r.Progress||0) == 100).length;
-        const late = data.filter(r => {
-            const end = Utils.fromGristDate(r.EndDate);
-            return end && end < now && (r.Progress||0) < 100;
-        }).length;
-        const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
-        
-        const donePct = total ? Math.round((done/total)*100) : 0;
-
-        // HTML
-        container.innerHTML = `
-            <div class="dashboard-grid">
-                <div class="stat-card">
-                    <div>
-                        <div class="stat-title">Total Tâches</div>
-                        <div class="stat-value" style="color:var(--primary)">${total}</div>
-                    </div>
-                    <div class="stat-footer">Toutes tâches confondues</div>
-                </div>
-                <div class="stat-card">
-                    <div>
-                        <div class="stat-title">Terminées</div>
-                        <div class="stat-value text-success">${done}</div>
-                    </div>
-                    <div class="stat-footer">${donePct}% du total</div>
-                </div>
-                <div class="stat-card">
-                    <div>
-                        <div class="stat-title">En Retard</div>
-                        <div class="stat-value text-danger">${late}</div>
-                    </div>
-                    <div class="stat-footer">À traiter en urgence</div>
-                </div>
-                <div class="stat-card">
-                    <div>
-                        <div class="stat-title">En Cours</div>
-                        <div class="stat-value" style="color:var(--warning)">${inProgress}</div>
-                    </div>
-                    <div class="stat-footer">Actives</div>
-                </div>
+        div.innerHTML = `
+          <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onclick="toggleStatus(${r.id}, '${r[COL_MAP.status]}'); event.stopPropagation();">
+          <div class="task-content" style="${isDone ? 'opacity:0.5' : ''}">
+            <span class="task-title">${r[COL_MAP.title] || 'Sans titre'}</span>
+            <div class="task-meta">
+              <span class="badge ${priorityClass}">${priority}</span>
+              <span>${r[COL_MAP.owner] || '-'}</span>
+              <span>${r[COL_MAP.tags] || ''}</span>
             </div>
-
-            <div class="charts-row">
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Par Priorité</h4>
-                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
-                </div>
-
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Par Administration</h4>
-                    ${renderBarChart(data, 'Team', null)}
-                </div>
-                
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Prochaines Échéances</h4>
-                    <table class="mini-table">
-                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100)
-                              .sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate))
-                              .slice(0,5)
-                              .map(r => `
-                                <tr>
-                                    <td><strong>${r.Title}</strong></td>
-                                    <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
-                                </tr>
-                              `).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
-                    </table>
-                </div>
-            </div>
+          </div>
         `;
+        container.appendChild(div);
+      });
     }
 
-    function renderBarChart(data, key, colorMap) {
-        const counts = {};
-        data.forEach(r => { 
-            const k = r[key] || 'Non défini'; 
-            counts[k] = (counts[k] || 0) + 1; 
-        });
-        const max = Math.max(...Object.values(counts), 1);
-        
-        return Object.keys(counts).map(k => {
-            const count = counts[k];
-            const pct = (count / max) * 100;
-            const color = colorMap ? (colorMap[k] || '#ccc') : Utils.stringToColor(k);
-            return `
-                <div class="bar-group">
-                    <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
-                    <div class="bar-bg">
-                        <div class="bar-fill" style="width:${pct}%; background:${color}"></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+    function changeView(view) {
+      currentView = view;
+      if (view === 'day') scale = 50; 
+      if (view === 'week') scale = 20;
+      if (view === 'month') scale = 10;
+      renderGantt();
     }
 
-    /** VUE 2 : GANTT **/
-    function renderGantt(container) {
-        const tasks = state.filteredRecords
-            .filter(r => r.StartDate && r.EndDate)
-            .map(r => ({...r, start: Utils.fromGristDate(r.StartDate), end: Utils.fromGristDate(r.EndDate)}))
-            .sort((a,b) => a.start - b.start);
+    function renderGantt() {
+      const containerHeader = document.getElementById('gantt-header');
+      const containerBody = document.getElementById('gantt-body');
+      const redLine = document.getElementById('current-day-line');
+      
+      containerHeader.innerHTML = '';
+      // Reset Body content but keep red line
+      while(containerBody.firstChild && containerBody.firstChild !== redLine) {
+        containerBody.removeChild(containerBody.firstChild);
+      }
+      // Re-append if lost or ensure logic preserves it
+      if(!containerBody.contains(redLine)) containerBody.appendChild(redLine);
 
-        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche avec dates.</div>'; return; }
+      if(displayedRecords.length === 0) return;
 
-        let min = new Date(Math.min(...tasks.map(t => t.start))).getTime();
-        let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
-        const padding = 86400000 * 2; // +2 jours marge
-        min -= padding; max += padding;
-        const span = max - min;
+      // Calcul Date Range
+      let minDate = new Date();
+      let maxDate = new Date();
+      const dates = displayedRecords.flatMap(r => [gristDateToJS(r[COL_MAP.start]), gristDateToJS(r[COL_MAP.due])]).filter(d => d);
+      if(dates.length) {
+        minDate = new Date(Math.min(...dates));
+        maxDate = new Date(Math.max(...dates));
+      }
+      minDate.setDate(minDate.getDate() - 5);
+      maxDate.setDate(maxDate.getDate() + 15);
 
-        let html = `
-            <div class="gantt-wrapper">
-                <div class="gantt-header">
-                    <span>Tâche</span>
-                    <span style="text-align:right">Période: ${Utils.formatDate(new Date(min))} - ${Utils.formatDate(new Date(max))}</span>
-                </div>`;
-        
-        tasks.forEach(t => {
-            const left = ((t.start.getTime() - min) / span) * 100;
-            const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
-            const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
-            
-            html += `
-                <div class="gantt-line" onclick="openModal(${t.id})">
-                    <div class="gantt-text" title="${t.Title}">${t.Title}</div>
-                    <div class="gantt-timeline">
-                        <div class="gantt-block" style="left:${left}%; width:${width}%; background:${color}" title="${t.Title} (${t.Progress}%)"></div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-        container.innerHTML = html;
-    }
+      const totalDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
+      const totalWidth = totalDays * scale;
 
-    /** VUE 3 : LISTE **/
-    function renderList(container) {
-        const listDiv = document.createElement('div');
-        listDiv.className = 'task-list';
-        
-        if(!state.filteredRecords.length) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>';
-            return;
+      // Header
+      const loopDate = new Date(minDate);
+      let dayCount = 0;
+      while (loopDate <= maxDate) {
+        const col = document.createElement('div');
+        col.className = 'gantt-time-col';
+        col.style.width = `${scale}px`;
+        col.style.height = '100%';
+        const d = loopDate.getDate();
+        const m = loopDate.getMonth() + 1;
+        const w = loopDate.getDay(); 
+
+        if(currentView === 'day') {
+             col.innerHTML = `<strong>${d}</strong>/${m}<br><span style="color:#aaa">${['D','L','M','M','J','V','S'][w]}</span>`;
+             if(w === 0 || w === 6) col.style.backgroundColor = '#fafafa';
+        } else if (currentView === 'week') {
+             if(w === 1 || dayCount === 0) {
+                 col.style.borderLeft = '2px solid #ccc';
+                 col.innerHTML = `<strong>${d}</strong><div class="week-number">S${getWeekNumber(loopDate)}</div>`;
+             } else { col.innerHTML = `${d}`; }
+        } else if (currentView === 'month') {
+             if(d === 1 || dayCount === 0) {
+                 col.style.borderLeft = '2px solid #ccc';
+                 col.innerHTML = `<strong>${loopDate.toLocaleString('default', { month: 'short' })}</strong>`;
+             }
         }
+        containerHeader.appendChild(col);
+        loopDate.setDate(loopDate.getDate() + 1);
+        dayCount++;
+      }
+      containerBody.style.width = `${totalWidth}px`;
+      containerHeader.style.width = `${totalWidth}px`;
 
-        state.filteredRecords.forEach(r => {
-            const card = document.createElement('div');
-            // Classe de priorité pour la couleur bordure gauche
-            const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
-            card.className = `task-card ${prioClass}`;
-            
-            // Clic carte -> Edit Modal
-            card.onclick = () => openModal(r.id);
-
-            const badges = [];
-            if(r.Team) badges.push({t: r.Team, c: Utils.stringToColor(r.Team)});
-            if(r.Project) badges.push({t: r.Project, c: Utils.stringToColor(r.Project)});
-
-            card.innerHTML = `
-                <div class="card-top">
-                    <h3 class="card-h3">${r.Title || 'Sans Titre'}</h3>
-                    ${r.Priority ? `<span style="font-size:10px; font-weight:700; color:#666">${r.Priority}</span>` : ''}
-                </div>
-                <div class="card-tags">
-                    ${badges.map(b => `<span class="tag" style="background:${b.c}">${b.t}</span>`).join('')}
-                </div>
-                <div class="card-btm">
-                    <div class="avatar-row">
-                        <span>👤 ${r.Assignee || 'Non assigné'}</span>
-                    </div>
-                    <div style="display:flex; gap:10px; align-items:center">
-                        <span>📅 ${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</span>
-                        ${r.Progress !== undefined ? `<strong>${r.Progress}%</strong>` : ''}
-                    </div>
-                </div>
-            `;
-            listDiv.appendChild(card);
-        });
-        container.appendChild(listDiv);
-    }
-
-    // --- 6. GESTION MODALE (CRUD COMPLET) ---
-    
-    // Remplit les datalists (Autocomplétion créative)
-    function populateDatalists() {
-        const fill = (id, list) => {
-            document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join('');
-        };
-        fill('list-teams', state.uniqueTeams);
-        fill('list-projects', state.uniqueProjects);
-        fill('list-assignees', state.uniqueAssignees);
-    }
-
-    function openModal(recordId = null) {
-        populateDatalists(); // Rafraîchir les listes
+      // Bars
+      displayedRecords.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'gantt-row';
+        row.style.width = `${totalWidth}px`;
         
-        const modal = document.getElementById('modal');
-        const title = document.getElementById('modal-title');
-        
-        // Reset Form
-        document.getElementById('input-id').value = '';
-        document.getElementById('input-title').value = '';
-        document.getElementById('input-team').value = '';
-        document.getElementById('input-project').value = '';
-        document.getElementById('input-assignee').value = '';
-        document.getElementById('input-priority').value = 'Medium';
-        document.getElementById('input-start').value = '';
-        document.getElementById('input-end').value = '';
-        document.getElementById('input-progress').value = 0;
-        document.getElementById('range-progress').value = 0;
+        const start = gristDateToJS(r[COL_MAP.start]);
+        const end = gristDateToJS(r[COL_MAP.due]);
 
-        if (recordId) {
-            // MODE EDITION
-            const r = state.allRecords.find(x => x.id === recordId);
-            if (r) {
-                title.innerText = "Modifier la Tâche";
-                document.getElementById('input-id').value = r.id;
-                document.getElementById('input-title').value = r.Title || '';
-                document.getElementById('input-team').value = r.Team || '';
-                document.getElementById('input-project').value = r.Project || '';
-                document.getElementById('input-assignee').value = r.Assignee || '';
-                document.getElementById('input-priority').value = r.Priority || 'Medium';
-                document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
-                document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
-                const prog = r.Progress || 0;
-                document.getElementById('input-progress').value = prog;
-                document.getElementById('range-progress').value = prog;
-                
-                // Sélectionner aussi dans Grist pour le focus
-                grist.setSelectedRows([r.id]);
-            }
-        } else {
-            // MODE CREATION
-            title.innerText = "Nouvelle Tâche";
-            // Pré-remplir avec les filtres actuels s'ils sont actifs
-            if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
-            if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
-            
-            // Dates par défaut (Aujourd'hui)
-            const today = Utils.inputDate(new Date());
-            document.getElementById('input-start').value = today;
-            document.getElementById('input-end').value = today;
+        if (start && end) {
+          const diffStart = (start - minDate) / (1000 * 60 * 60 * 24);
+          const duration = (end - start) / (1000 * 60 * 60 * 24) + 1;
+
+          const bar = document.createElement('div');
+          bar.className = 'gantt-bar';
+          if(r[COL_MAP.status] === 'Done') bar.classList.add('done');
+          
+          bar.style.left = `${diffStart * scale}px`;
+          bar.style.width = `${Math.max(duration * scale, 5)}px`;
+          bar.textContent = r[COL_MAP.title];
+          bar.title = "Glissez pour déplacer";
+
+          // INIT DRAG AND DROP
+          bar.addEventListener('mousedown', (e) => handleDragStart(e, bar, r.id, start, end));
+          
+          row.appendChild(bar);
         }
+        containerBody.appendChild(row);
+      });
 
-        modal.classList.add('open');
+      // Red Line
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      minDate.setHours(0,0,0,0);
+      const diffToday = (today - minDate) / (1000 * 60 * 60 * 24);
+      if(diffToday >= 0 && diffToday <= totalDays) {
+          redLine.style.display = 'block';
+          redLine.style.left = `${diffToday * scale}px`;
+          // Replace to front
+          containerBody.appendChild(redLine);
+      } else {
+          redLine.style.display = 'none';
+      }
     }
 
-    function closeModal() {
-        document.getElementById('modal').classList.remove('open');
+    // --- DRAG & DROP LOGIC ---
+    function handleDragStart(e, bar, id, start, end) {
+      if(e.button !== 0) return; // Only left click
+      e.preventDefault();
+      
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragOriginalLeft = parseFloat(bar.style.left);
+      draggedElement = bar;
+      draggedRecordId = id;
+      draggedRecordStart = start;
+      draggedRecordEnd = end;
+
+      draggedElement.classList.add('dragging-active');
+      document.getElementById('gantt-container').classList.add('dragging');
+
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
     }
 
-    async function saveTask() {
-        const id = document.getElementById('input-id').value; // String, vide si création
+    function handleDragMove(e) {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartX;
+      draggedElement.style.left = `${dragOriginalLeft + deltaX}px`;
+    }
+
+    async function handleDragEnd(e) {
+      if (!isDragging) return;
+      
+      // Cleanup events
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      
+      const deltaX = e.clientX - dragStartX;
+      const deltaDays = Math.round(deltaX / scale); // Convert pixels to days
+      
+      // Visual reset
+      draggedElement.classList.remove('dragging-active');
+      document.getElementById('gantt-container').classList.remove('dragging');
+
+      if (deltaDays !== 0) {
+        // Calculate new dates
+        const newStart = new Date(draggedRecordStart);
+        newStart.setDate(newStart.getDate() + deltaDays);
         
-        // Récupération des valeurs
-        // Note: Pour les champs Choice (Team, Project), Grist acceptera la nouvelle valeur texte
-        // si la colonne est configurée pour, ou si c'est une colonne Texte simple.
-        const fields = {
-            Title: document.getElementById('input-title').value || 'Nouvelle Tâche',
-            Team: document.getElementById('input-team').value,
-            Project: document.getElementById('input-project').value,
-            Assignee: document.getElementById('input-assignee').value,
-            Priority: document.getElementById('input-priority').value,
-            StartDate: Utils.toGristDate(new Date(document.getElementById('input-start').value)),
-            EndDate: Utils.toGristDate(new Date(document.getElementById('input-end').value)),
-            Progress: parseInt(document.getElementById('input-progress').value) || 0
-        };
+        const newEnd = new Date(draggedRecordEnd);
+        newEnd.setDate(newEnd.getDate() + deltaDays);
 
+        // Optimistic UI update handled by render logic, but here we wait for Grist
         try {
-            if (id) {
-                // UPDATE
-                await grist.selectedTable.update({ id: parseInt(id), fields });
-            } else {
-                // CREATE
-                await grist.selectedTable.create({ fields });
-            }
-            closeModal();
-        } catch (e) {
-            console.error(e);
-            alert("Erreur lors de la sauvegarde. Vérifiez les droits d'accès ou les noms de colonnes.");
+          await grist.selectedTable.update([{
+            id: draggedRecordId,
+            [COL_MAP.start]: jsDateToGrist(newStart),
+            [COL_MAP.due]: jsDateToGrist(newEnd)
+          }]);
+        } catch(err) {
+          console.error("Error updating date", err);
+          renderGantt(); // Revert on error
         }
+      } else {
+        // If moved less than a day snap back
+        renderGantt(); 
+      }
+
+      // Reset state
+      isDragging = false;
+      draggedElement = null;
+      draggedRecordId = null;
     }
 
-    // Synchro Range/Number pour le slider de progression
-    document.getElementById('input-progress').addEventListener('input', function() {
-        document.getElementById('range-progress').value = this.value;
-    });
-</script>
+    // --- MODAL & FORM ---
+    function openModal() {
+      const modal = document.getElementById('modal-overlay');
+      const selectTags = document.getElementById('input-tags');
+      selectTags.innerHTML = '<option value="">-- Sélectionner --</option>';
+      uniqueTags.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t; selectTags.appendChild(opt);
+      });
+      const optNew = document.createElement('option');
+      optNew.value = "_NEW_"; optNew.textContent = "+ Créer nouveau..."; selectTags.appendChild(optNew);
+      
+      selectTags.onchange = function() {
+          if(this.value === '_NEW_') {
+              const newVal = prompt("Nom de la nouvelle occurrence:");
+              if(newVal) {
+                  const opt = document.createElement('option');
+                  opt.value = newVal; opt.textContent = newVal; opt.selected = true;
+                  this.appendChild(opt); this.value = newVal;
+              } else { this.value = ""; }
+          }
+      }
+
+      document.getElementById('new-task-form').reset();
+      document.getElementById('input-start').valueAsDate = new Date();
+      document.getElementById('input-due').valueAsDate = new Date();
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    async function submitTask(e) {
+      e.preventDefault();
+      const record = {
+        [COL_MAP.title]: document.getElementById('input-title').value,
+        [COL_MAP.start]: jsDateToGrist(document.getElementById('input-start').valueAsDate),
+        [COL_MAP.due]: jsDateToGrist(document.getElementById('input-due').valueAsDate),
+        [COL_MAP.owner]: document.getElementById('input-owner').value,
+        [COL_MAP.tags]: document.getElementById('input-tags').value,
+        [COL_MAP.priority]: document.getElementById('input-priority').value,
+        [COL_MAP.status]: 'Todo'
+      };
+      await grist.selectedTable.create([record]);
+      closeModal();
+    }
+  </script>
 </body>
 </html>
