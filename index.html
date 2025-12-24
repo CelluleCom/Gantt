@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Ultimate v6.5</title>
+    <title>Gantt'FIP Ultimate v8.1</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <style>
-        /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
+        /* --- 1. DESIGN SYSTEM (IDENTIQUE V6.5) --- */
         :root {
             --primary: var(--grist-theme-cursor, #2563eb);
             --primary-light: #eff6ff;
@@ -41,8 +41,8 @@
             padding: 20px;
             font-size: 14px;
             line-height: 1.5;
-            padding-bottom: 80px; /* Espace pour le FAB mobile */
-            user-select: none; /* Important pour Drag & Drop */
+            padding-bottom: 80px;
+            user-select: none;
         }
 
         /* --- 2. LAYOUT & NAVIGATION --- */
@@ -69,7 +69,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* Onglets (Pills Design) */
         .nav-pills {
             display: flex;
             background: #e2e8f0;
@@ -100,7 +99,8 @@
         /* --- 3. ACTIONS & FILTRES --- */
         .toolbar {
             display: grid;
-            grid-template-columns: 1fr 1fr auto auto; /* Ajout colonne pour PDF */
+            /* Modif: 3 colonnes pour les filtres + auto */
+            grid-template-columns: 1fr 1fr 1fr auto; 
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -137,12 +137,29 @@
 
         .btn-primary:active { transform: scale(0.98); }
 
-        /* --- 4. VUES (Transitions) --- */
+        /* AJOUT: Bouton Print Flottant (FAB) */
+        .fab-print {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* --- 4. VUES --- */
         .view-container { display: none; animation: fadeIn 0.4s ease; }
         .view-container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* VUE 1: TABLEAU DE BORD (Grid) */
+        /* VUE 1: DASHBOARD */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -168,44 +185,54 @@
         .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
         
-        /* Barres de progression custom */
         .bar-group { margin-bottom: 12px; }
         .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
         .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
         .bar-fill { height: 100%; border-radius: 4px; }
-
-        /* Table minimaliste "À venir" */
         .mini-table { width: 100%; border-collapse: collapse; }
         .mini-table td { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .mini-table tr:last-child td { border-bottom: none; }
 
-        /* VUE 2: GANTT */
+        /* VUE 2: GANTT (Modifiée pour Grouping & Red Line) */
         .gantt-wrapper {
             background: var(--surface);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border);
             overflow-x: auto;
-            padding: 16px;
-            position: relative; /* Pour le positionnement absolu */
+            padding: 0; /* Padding enlevé pour coller les headers */
+            position: relative;
+            min-height: 400px;
         }
-        .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
-        .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; cursor: pointer; }
-        .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
+        .gantt-header { 
+            display: flex; 
+            border-bottom: 1px solid var(--border); 
+            height: 40px; 
+            position: sticky; top: 0; background: var(--surface); z-index: 20;
+        }
+        /* AJOUT: Sidebar Header */
+        .gantt-sidebar-head { width: 200px; flex-shrink:0; border-right: 1px solid var(--border); padding: 10px; font-weight: bold; font-size:12px; display:flex; align-items:center; background:#f8fafc; }
+        .gantt-timeline-head { flex-grow: 1; position: relative; }
+
+        .gantt-line { display: flex; align-items: center; border-bottom: 1px solid #f1f5f9; height: 36px; position: relative; }
+        .gantt-text { width: 200px; flex-shrink: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10px; cursor: pointer; border-right: 1px solid var(--border); background: var(--surface); position:sticky; left:0; z-index:10; display:flex; align-items:center; height:100%; }
+        .gantt-timeline { flex-grow: 1; position: relative; height: 100%; }
         
-        /* Modif Gantt Block pour Drag */
         .gantt-block { 
             position: absolute; 
-            height: 16px; 
-            top: 4px; 
+            height: 20px; 
+            top: 8px; 
             border-radius: 4px; 
             min-width: 8px; 
             cursor: grab; 
             transition: box-shadow 0.2s, opacity 0.2s; 
-            z-index: 10;
+            z-index: 5;
+            font-size: 10px; color: white; display: flex; align-items: center; padding-left: 5px; white-space: nowrap; overflow: hidden;
         }
-        .gantt-block:hover { opacity: 0.9; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .gantt-block:active { cursor: grabbing; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 20; }
+        .gantt-block:active { cursor: grabbing; z-index: 20; }
+        
+        /* AJOUT: Groupe & Red Line */
+        .gantt-group-title { background: #f1f5f9; padding: 6px 10px; font-weight: 700; font-size: 12px; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); position:sticky; left:0; width:100%; z-index:15; }
+        .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: red; z-index: 8; pointer-events: none; }
+        .today-label { position: absolute; top: -20px; left: -20px; background: red; color: white; padding: 2px 4px; font-size: 10px; border-radius: 3px; }
 
         /* VUE 3: LISTE */
         .task-list { display: flex; flex-direction: column; gap: 12px; }
@@ -267,39 +294,28 @@
         
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+        
+        /* AJOUT: Input avec bouton + */
+        .input-row-plus { display: flex; gap: 8px; }
+        .btn-plus { width: 34px; flex-shrink:0; border:1px solid var(--border); background:#f1f5f9; font-weight:bold; cursor:pointer; border-radius:var(--radius-md); font-size:16px; color:var(--primary); }
+        
         .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
         .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
         
-        /* Helper colors */
         .text-success { color: var(--success); }
         .text-danger { color: var(--danger); }
-        
-        /* Loading */
         .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
 
-        /* --- 6. PRINT / PDF STYLES (AJOUT) --- */
+        /* --- 6. PRINT STYLES --- */
         @media print {
             body { background: white; padding: 0; margin: 0; overflow: visible; }
-            .app-header, .toolbar, .close-btn, .modal-overlay, .btn-primary, .btn-sec { display: none !important; }
-            
-            /* On force l'affichage de la vue courante */
+            .app-header, .toolbar, .close-btn, .modal-overlay, .btn-primary, .btn-secondary, .fab-print { display: none !important; }
             .view-container { display: block !important; width: 100% !important; animation: none; }
-            .gantt-wrapper, .dashboard-grid, .task-list { 
-                border: none; 
-                box-shadow: none; 
-                width: 100%; 
-                overflow: visible; 
-            }
+            .gantt-wrapper, .dashboard-grid, .task-list { border: none; box-shadow: none; width: 100%; overflow: visible; }
             .gantt-wrapper { overflow-x: hidden; }
-            
-            /* Ajustement couleurs pour impression */
-            .gantt-block, .bar-fill, .tag, .stat-card {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
             @page { size: landscape; margin: 1cm; }
         }
     </style>
@@ -321,17 +337,24 @@
         </nav>
     </div>
 
-    <div class="toolbar">
-        <select id="filter-team" class="select-modern" onchange="handleFilters()">
-            <option value="all">Toutes les administrations</option>
-        </select>
+    <div id="main-toolbar" class="toolbar" style="display:none">
         <select id="filter-project" class="select-modern" onchange="handleFilters()">
             <option value="all">Tous les projets</option>
         </select>
-        <button class="btn-sec" onclick="window.print()">
-            🖨️ PDF / Print
-        </button>
+        <select id="filter-team" class="select-modern" onchange="handleFilters()">
+            <option value="all">Toutes les administrations</option>
+        </select>
+        <select id="filter-assignee" class="select-modern" onchange="handleFilters()">
+            <option value="all">Tous les responsables</option>
+        </select>
+        <select id="gantt-scale" class="select-modern" style="display:none" onchange="changeGanttScale(this.value)">
+            <option value="day">Vue: Jour</option>
+            <option value="week">Vue: Semaine</option>
+            <option value="month">Vue: Mois</option>
+        </select>
     </div>
+
+    <button class="fab-print" onclick="window.print()" title="Imprimer">🖨️</button>
 
     <div id="app-content">
         <div class="loading">Chargement des données...</div>
@@ -351,31 +374,39 @@
                     <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Administration (Team)</label>
-                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-teams"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Projet</label>
+                <div class="form-group">
+                    <label class="form-label">Projet</label>
+                    <div class="input-row-plus">
                         <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
-                        <datalist id="list-projects"></datalist>
+                        <button class="btn-plus" onclick="addItem('input-project')">+</button>
                     </div>
+                    <datalist id="list-projects"></datalist>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Administration (Team)</label>
+                    <div class="input-row-plus">
+                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
+                        <button class="btn-plus" onclick="addItem('input-team')">+</button>
+                    </div>
+                    <datalist id="list-teams"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Responsable</label>
+                    <div class="input-row-plus">
+                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
+                        <button class="btn-plus" onclick="addItem('input-assignee')">+</button>
+                    </div>
+                    <datalist id="list-assignees"></datalist>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Responsable</label>
-                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
-                        <datalist id="list-assignees"></datalist>
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">Priorité</label>
                         <select id="input-priority" class="form-input">
                             <option value="Low">Low (Basse)</option>
-                            <option value="Medium" selected>Medium (Moyenne)</option>
-                            <option value="High">High (Haute)</option>
+                            <option value="Normal">Normal (Normale)</option> <option value="High">High (Haute)</option>
                         </select>
                     </div>
                 </div>
@@ -407,7 +438,7 @@
 <script>
     /**
      * ===========================================
-     * GANTT'FIP ULTIMATE - V6.5 (DRAG ENABLED)
+     * GANTT'FIP ULTIMATE - V8.1 (STRICT BASE V6.5)
      * ===========================================
      */
 
@@ -427,24 +458,20 @@
     let state = {
         allRecords: [],
         filteredRecords: [],
-        filters: { team: 'all', project: 'all' },
+        filters: { team: 'all', project: 'all', assignee: 'all' }, // AJOUT Assignee
         currentView: 'dashboard',
+        ganttScale: 'day', // AJOUT State
         uniqueTeams: [],
         uniqueProjects: [],
         uniqueAssignees: []
     };
 
-    // DRAG STATE (AJOUT)
+    // DRAG & DROP STATE
     let dragState = {
-        isDragging: false,
-        element: null,
-        recordId: null,
-        startX: 0,
-        initialLeft: 0,
-        timelineWidth: 0,
-        span: 0,
-        originalStart: 0,
-        originalEnd: 0
+        isDragging: false, element: null, recordId: null,
+        startX: 0, initialLeft: 0, timelineWidth: 0, msPerPixel: 0,
+        originalStart: null, originalEnd: null,
+        scalePx: 0 // Ajout helper
     };
 
     // --- 2. UTILITAIRES ---
@@ -498,31 +525,28 @@
         state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
     }
 
-    // --- 4. LOGIQUE FILTRES ---
+    // --- 4. LOGIQUE FILTRES & ACTIONS ---
     function updateFilterSelects() {
-        const tVal = document.getElementById('filter-team').value;
-        const pVal = document.getElementById('filter-project').value;
-        const tSelect = document.getElementById('filter-team');
-        const pSelect = document.getElementById('filter-project');
-
-        tSelect.innerHTML = `<option value="all">Toutes les administrations</option>` + 
-            state.uniqueTeams.map(t => `<option value="${t}">${t}</option>`).join('');
-        
-        pSelect.innerHTML = `<option value="all">Tous les projets</option>` + 
-            state.uniqueProjects.map(p => `<option value="${p}">${p}</option>`).join('');
-
-        if(state.uniqueTeams.includes(tVal)) tSelect.value = tVal;
-        if(state.uniqueProjects.includes(pVal)) pSelect.value = pVal;
+        const fill = (id, list, def) => {
+            const el = document.getElementById(id);
+            const val = el.value;
+            el.innerHTML = `<option value="all">${def}</option>` + list.map(v => `<option value="${v}">${v}</option>`).join('');
+            if(list.includes(val)) el.value = val;
+        };
+        fill('filter-team', state.uniqueTeams, 'Toutes les administrations');
+        fill('filter-project', state.uniqueProjects, 'Tous les projets');
+        fill('filter-assignee', state.uniqueAssignees, 'Tous les responsables');
     }
 
     function handleFilters() {
         state.filters.team = document.getElementById('filter-team').value;
         state.filters.project = document.getElementById('filter-project').value;
+        state.filters.assignee = document.getElementById('filter-assignee').value;
 
         state.filteredRecords = state.allRecords.filter(r => {
-            const teamOk = state.filters.team === 'all' || r.Team === state.filters.team;
-            const projOk = state.filters.project === 'all' || r.Project === state.filters.project;
-            return teamOk && projOk;
+            return (state.filters.team === 'all' || r.Team === state.filters.team) &&
+                   (state.filters.project === 'all' || r.Project === state.filters.project) &&
+                   (state.filters.assignee === 'all' || r.Assignee === state.filters.assignee);
         });
 
         renderCurrentView();
@@ -532,6 +556,24 @@
         state.currentView = view;
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
+        
+        // MODIF: Gestion Toolbar Visibility
+        const tb = document.getElementById('main-toolbar');
+        const gs = document.getElementById('gantt-scale');
+        
+        if (view === 'dashboard') {
+            tb.style.display = 'none';
+        } else {
+            tb.style.display = 'grid';
+            gs.style.display = (view === 'gantt') ? 'block' : 'none';
+        }
+
+        renderCurrentView();
+    }
+    
+    // AJOUT: Changement échelle
+    function changeGanttScale(v) {
+        state.ganttScale = v;
         renderCurrentView();
     }
 
@@ -552,7 +594,8 @@
 
     /** VUE 1 : DASHBOARD **/
     function renderDashboard(container) {
-        const data = state.filteredRecords;
+        // MODIF: Dashboard ignore les filtres de la toolbar (voir demande)
+        const data = state.allRecords; 
         const total = data.length;
         const now = new Date();
         const done = data.filter(r => (r.Progress||0) == 100).length;
@@ -563,10 +606,11 @@
         const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
         const donePct = total ? Math.round((done/total)*100) : 0;
 
+        // MODIF Couleurs: Total en Noir (#000), En cours en Bleu (--info)
         container.innerHTML = `
             <div class="dashboard-grid">
                 <div class="stat-card">
-                    <div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:var(--primary)">${total}</div></div>
+                    <div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:#000">${total}</div></div>
                     <div class="stat-footer">Toutes tâches confondues</div>
                 </div>
                 <div class="stat-card">
@@ -578,28 +622,18 @@
                     <div class="stat-footer">À traiter en urgence</div>
                 </div>
                 <div class="stat-card">
-                    <div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--warning)">${inProgress}</div></div>
+                    <div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--info)">${inProgress}</div></div>
                     <div class="stat-footer">Actives</div>
                 </div>
             </div>
             <div class="charts-row">
                 <div class="chart-box">
                     <h4 style="margin-top:0">Par Priorité</h4>
-                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
+                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Normal: 'var(--warning)', Low: 'var(--success)'})}
                 </div>
                 <div class="chart-box">
                     <h4 style="margin-top:0">Par Administration</h4>
                     ${renderBarChart(data, 'Team', null)}
-                </div>
-                <div class="chart-box">
-                    <h4 style="margin-top:0">Prochaines Échéances</h4>
-                    <table class="mini-table">
-                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100).sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate)).slice(0,5).map(r => `
-                            <tr>
-                                <td><strong>${r.Title}</strong></td>
-                                <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
-                            </tr>`).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
-                    </table>
                 </div>
             </div>
         `;
@@ -621,7 +655,7 @@
         }).join('');
     }
 
-    /** VUE 2 : GANTT (AVEC DRAG & DROP) **/
+    /** VUE 2 : GANTT (GROUPÉ + SCALE + RED LINE) **/
     function renderGantt(container) {
         const tasks = state.filteredRecords
             .filter(r => r.StartDate && r.EndDate)
@@ -634,128 +668,167 @@
         let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
         const padding = 86400000 * 2; 
         min -= padding; max += padding;
-        const span = max - min;
+        const totalMs = max - min;
+        const totalDays = totalMs / 86400000;
 
-        let html = `
-            <div class="gantt-wrapper">
-                <div class="gantt-header">
-                    <span>Tâche</span>
-                    <span style="text-align:right">Période: ${Utils.formatDate(new Date(min))} - ${Utils.formatDate(new Date(max))}</span>
-                </div>`;
-        
-        tasks.forEach(t => {
-            const left = ((t.start.getTime() - min) / span) * 100;
-            const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
-            const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
+        // AJOUT: Gestion Scale
+        let pxPerDay = 40; // Defaut Day
+        if (state.ganttScale === 'week') pxPerDay = 15;
+        if (state.ganttScale === 'month') pxPerDay = 5;
+
+        const totalWidth = totalDays * pxPerDay;
+
+        // Header HTML Generation
+        let headerHtml = '';
+        let loopDate = new Date(min);
+        for(let i=0; i<totalDays; i++) {
+            const d = loopDate.getDate();
+            const w = loopDate.getDay();
+            const m = loopDate.toLocaleDateString('fr-FR', {month:'short'});
+            let txt = '';
+            let style = `position:absolute; left:${i*pxPerDay}px; width:${pxPerDay}px; height:100%; border-right:1px solid #f1f5f9; text-align:center; font-size:10px; padding-top:4px;`;
+
+            if(state.ganttScale === 'day') {
+                txt = `<b>${d}</b><br><span style="color:#aaa">${['D','L','M','M','J','V','S'][w]}</span>`;
+                if(w===0 || w===6) style += 'background:#fafafa';
+            } else if (state.ganttScale === 'week') {
+                if(w===1) { // Lundi
+                     style += 'border-left:1px solid #ccc;';
+                     txt = `S${getWeekNum(loopDate)}<br>${m}`;
+                }
+            } else if (state.ganttScale === 'month') {
+                if(d===1) {
+                     style += 'border-left:1px solid #ccc; font-weight:bold;';
+                     txt = m;
+                }
+            }
+            if(txt) headerHtml += `<div style="${style}">${txt}</div>`;
+            loopDate.setDate(loopDate.getDate() + 1);
+        }
+
+        // AJOUT: Ligne Rouge
+        const now = new Date();
+        const diffNow = (now.getTime() - min) / 86400000;
+        let redLine = '';
+        if(diffNow >= 0 && diffNow <= totalDays) {
+            redLine = `<div class="today-line" style="left:${diffNow*pxPerDay}px"><div class="today-label">Auj.</div></div>`;
+        }
+
+        // AJOUT: Grouping Loop
+        const projects = [...new Set(tasks.map(t => t.Project || 'Sans Projet'))].sort();
+        let bodyHtml = redLine;
+
+        projects.forEach(proj => {
+            bodyHtml += `<div class="gantt-group-title">${proj}</div>`;
             
-            // Note: Ajout des ID pour le Drag
-            html += `
-                <div class="gantt-line">
-                    <div class="gantt-text" title="${t.Title}" onclick="openModal(${t.id})">${t.Title}</div>
-                    <div class="gantt-timeline" id="timeline-${t.id}">
-                        <div class="gantt-block" 
-                             id="block-${t.id}"
-                             style="left:${left}%; width:${width}%; background:${color}" 
-                             title="${t.Title} (${t.Progress}%)"
-                             onmousedown="handleDragStart(event, ${t.id}, ${t.start.getTime()}, ${t.end.getTime()}, ${span})">
+            const groupTasks = tasks.filter(t => (t.Project || 'Sans Projet') === proj);
+            groupTasks.forEach(t => {
+                const diffStart = (t.start.getTime() - min) / 86400000;
+                const dur = (t.end.getTime() - t.start.getTime()) / 86400000 + 1;
+                const color = Utils.stringToColor(t.Project);
+                
+                bodyHtml += `
+                    <div class="gantt-line">
+                        <div class="gantt-text" title="${t.Title}" onclick="openModal(${t.id})">${t.Title}</div>
+                        <div class="gantt-timeline" id="timeline-${t.id}">
+                            <div class="gantt-block" 
+                                 id="block-${t.id}"
+                                 style="left:${diffStart*pxPerDay}px; width:${Math.max(dur*pxPerDay, 5)}px; background:${color}" 
+                                 title="${t.Title}"
+                                 onmousedown="handleDragStart(event, ${t.id}, ${min}, ${pxPerDay})">
+                                 ${t.Title}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            });
         });
-        
-        html += `</div>`;
-        container.innerHTML = html;
 
-        // Listeners Globales pour le drag (ajoutés une seule fois)
-        if (!window.dragInitialized) {
+        container.innerHTML = `
+            <div class="gantt-wrapper">
+                <div class="gantt-header">
+                    <div class="gantt-sidebar-head">Projet / Tâche</div>
+                    <div class="gantt-timeline-head" style="width:${totalWidth}px">
+                        ${headerHtml}
+                    </div>
+                </div>
+                <div class="gantt-body" style="width:${totalWidth+200}px">
+                    ${bodyHtml}
+                </div>
+            </div>`;
+        
+        // Init Listeners Global (une fois)
+        if(!window.dragActive) {
             window.addEventListener('mousemove', handleDragMove);
             window.addEventListener('mouseup', handleDragEnd);
-            window.dragInitialized = true;
+            window.dragActive = true;
         }
     }
 
-    // --- LOGIQUE DRAG AND DROP ---
-    function handleDragStart(e, id, startTs, endTs, totalSpan) {
-        e.preventDefault(); // Evite sélection texte
-        e.stopPropagation(); // Evite click timeline
+    function getWeekNum(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    }
 
+    // --- DRAG & DROP LOGIC ---
+    function handleDragStart(e, id, minTime, pxPerDay) {
+        e.preventDefault(); e.stopPropagation();
         const block = document.getElementById(`block-${id}`);
-        const timeline = document.getElementById(`timeline-${id}`);
-
         dragState = {
-            isDragging: true,
-            element: block,
-            recordId: id,
-            startX: e.clientX,
-            initialLeft: parseFloat(block.style.left), // En %
-            timelineWidth: timeline.offsetWidth,
-            span: totalSpan,
-            originalStart: startTs,
-            originalEnd: endTs,
-            hasMoved: false
+            isDragging: true, element: block, recordId: id,
+            startX: e.clientX, initialLeft: parseFloat(block.style.left),
+            pxPerDay: pxPerDay, minTime: minTime, hasMoved: false
         };
     }
 
     function handleDragMove(e) {
         if (!dragState.isDragging) return;
         dragState.hasMoved = true;
-        
-        const deltaPx = e.clientX - dragState.startX;
-        const deltaPercent = (deltaPx / dragState.timelineWidth) * 100;
-        
-        // Mise à jour visuelle fluide
-        dragState.element.style.left = (dragState.initialLeft + deltaPercent) + '%';
+        const deltaPixels = e.clientX - dragState.startX;
+        dragState.element.style.left = (dragState.initialLeft + deltaPixels) + 'px';
     }
 
     async function handleDragEnd(e) {
         if (!dragState.isDragging) return;
 
         if (dragState.hasMoved) {
-            const deltaPx = e.clientX - dragState.startX;
-            // Calcul du shift en millisecondes
-            // Ratio: (deltaPx / largeurTimeline) * duréeTotale
-            const shiftMs = (deltaPx / dragState.timelineWidth) * dragState.span;
-            
-            const newStart = new Date(dragState.originalStart + shiftMs);
-            const newEnd = new Date(dragState.originalEnd + shiftMs);
+            const deltaPixels = e.clientX - dragState.startX;
+            const days = Math.round(deltaPixels / dragState.pxPerDay);
 
-            // Mise à jour Grist
-            try {
-                await grist.selectedTable.update({
-                    id: dragState.recordId,
-                    fields: {
-                        StartDate: Utils.toGristDate(newStart),
-                        EndDate: Utils.toGristDate(newEnd)
-                    }
-                });
-            } catch (err) {
-                console.error("Erreur Drag:", err);
-                renderCurrentView(); // Revert visuel si erreur
-            }
+            if (days !== 0) {
+                const r = state.allRecords.find(x => x.id === dragState.recordId);
+                const newStart = Utils.fromGristDate(r.StartDate); newStart.setDate(newStart.getDate() + days);
+                const newEnd = Utils.fromGristDate(r.EndDate); newEnd.setDate(newEnd.getDate() + days);
+                
+                try {
+                    await grist.selectedTable.update({
+                        id: dragState.recordId,
+                        fields: { StartDate: Utils.toGristDate(newStart), EndDate: Utils.toGristDate(newEnd) }
+                    });
+                } catch (err) { console.error(err); renderCurrentView(); }
+            } else { renderCurrentView(); }
         } else {
-            // C'était un simple clic -> Ouvrir modale
             openModal(dragState.recordId);
         }
-
         dragState.isDragging = false;
         dragState.element = null;
     }
-
 
     /** VUE 3 : LISTE **/
     function renderList(container) {
         const listDiv = document.createElement('div');
         listDiv.className = 'task-list';
-        
-        if(!state.filteredRecords.length) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>';
-            return;
-        }
+        if(!state.filteredRecords.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>'; return; }
 
         state.filteredRecords.forEach(r => {
             const card = document.createElement('div');
-            const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
+            // Mapping de priorité pour la couleur de bordure (Normal par defaut)
+            let prioClass = 'priority-normal';
+            if(r.Priority === 'High') prioClass = 'priority-high';
+            if(r.Priority === 'Low') prioClass = 'priority-low';
+            
             card.className = `task-card ${prioClass}`;
             card.onclick = () => openModal(r.id);
 
@@ -791,21 +864,26 @@
         fill('list-projects', state.uniqueProjects);
         fill('list-assignees', state.uniqueAssignees);
     }
+    
+    // AJOUT: Helper pour bouton +
+    function addItem(id) {
+        const val = prompt("Ajouter une valeur :");
+        if(val) document.getElementById(id).value = val;
+    }
 
     function openModal(recordId = null) {
         populateDatalists();
         const modal = document.getElementById('modal');
         const title = document.getElementById('modal-title');
         
-        // Reset Form
         document.getElementById('input-id').value = '';
         document.getElementById('input-title').value = '';
         document.getElementById('input-team').value = '';
         document.getElementById('input-project').value = '';
         document.getElementById('input-assignee').value = '';
-        document.getElementById('input-priority').value = 'Medium';
-        document.getElementById('input-start').value = '';
-        document.getElementById('input-end').value = '';
+        document.getElementById('input-priority').value = 'Normal';
+        document.getElementById('input-start').value = Utils.inputDate(new Date());
+        document.getElementById('input-end').value = Utils.inputDate(new Date());
         document.getElementById('input-progress').value = 0;
         document.getElementById('range-progress').value = 0;
 
@@ -818,21 +896,18 @@
                 document.getElementById('input-team').value = r.Team || '';
                 document.getElementById('input-project').value = r.Project || '';
                 document.getElementById('input-assignee').value = r.Assignee || '';
-                document.getElementById('input-priority').value = r.Priority || 'Medium';
+                document.getElementById('input-priority').value = r.Priority || 'Normal';
                 document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
                 document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
-                const prog = r.Progress || 0;
-                document.getElementById('input-progress').value = prog;
-                document.getElementById('range-progress').value = prog;
+                document.getElementById('input-progress').value = r.Progress || 0;
+                document.getElementById('range-progress').value = r.Progress || 0;
                 grist.setSelectedRows([r.id]);
             }
         } else {
             title.innerText = "Nouvelle Tâche";
+            // Pre-fill avec les filtres
             if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
             if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
-            const today = Utils.inputDate(new Date());
-            document.getElementById('input-start').value = today;
-            document.getElementById('input-end').value = today;
         }
         modal.classList.add('open');
     }
@@ -856,10 +931,7 @@
             if (id) await grist.selectedTable.update({ id: parseInt(id), fields });
             else await grist.selectedTable.create({ fields });
             closeModal();
-        } catch (e) {
-            console.error(e);
-            alert("Erreur lors de la sauvegarde.");
-        }
+        } catch (e) { console.error(e); alert("Erreur lors de la sauvegarde."); }
     }
 
     document.getElementById('input-progress').addEventListener('input', function() {
