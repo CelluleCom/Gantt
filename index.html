@@ -3,650 +3,564 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grist Task Manager V4 - Enterprise Edition</title>
+    <title>Gantt'FIP Manager</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <style>
-        /* =========================================
-           1. THÈME & VARIABLES (DESIGN SYSTEM)
-           ========================================= */
+        /* --- 1. VARIABLES & THÈME --- */
         :root {
-            /* Couleurs Grist Natives */
-            --grist-primary: var(--grist-theme-cursor, #16b378);
-            --grist-bg: var(--grist-theme-page-bg, #ffffff);
-            --grist-text: var(--grist-theme-text, #333333);
-            --grist-border: var(--grist-theme-border, #d9d9d9);
-            --grist-card-bg: var(--grist-theme-panel-header-bg, #f7f7f7);
-            --grist-hover: var(--grist-theme-selection, rgba(22, 179, 120, 0.1));
-            
-            /* Variables Locales */
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --spacing-xs: 4px;
-            --spacing-sm: 8px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --shadow-card: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-            --shadow-hover: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-            
-            --anim-speed: 0.2s;
+            --primary: var(--grist-theme-cursor, #16b378);
+            --bg: var(--grist-theme-page-bg, #ffffff);
+            --text: var(--grist-theme-text, #333333);
+            --border: var(--grist-theme-border, #d9d9d9);
+            --card-bg: var(--grist-theme-panel-header-bg, #f7f7f7);
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --radius: 6px;
+            --spacing: 16px;
         }
 
-        /* =========================================
-           2. RESET & BASE
-           ========================================= */
-        * { box-sizing: border-box; }
-        
         body {
-            font-family: var(--font-family);
-            background-color: var(--grist-bg);
-            color: var(--grist-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            padding: var(--spacing-md);
-            font-size: 14px;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
+            padding: var(--spacing);
+            font-size: 13px;
+            overflow-x: hidden; /* Evite scroll horizontal global */
         }
 
-        /* =========================================
-           3. COMPOSANTS D'INTERFACE (UI)
-           ========================================= */
-        
-        /* Conteneur principal Sticky */
-        .widget-header {
-            position: sticky;
-            top: 0;
-            background-color: var(--grist-bg);
-            z-index: 1000;
-            padding-bottom: var(--spacing-md);
-            border-bottom: 1px solid var(--grist-border);
-            margin-bottom: var(--spacing-md);
-        }
-
-        /* Grille des filtres */
-        .filters-wrapper {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--grist-border);
-            border-radius: var(--radius-md);
-            background-color: var(--grist-bg);
-            color: var(--grist-text);
-            font-size: 14px;
-            transition: border-color var(--anim-speed);
-            appearance: none; /* Reset natif */
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px top 50%;
-            background-size: 10px auto;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--grist-primary);
-            box-shadow: 0 0 0 3px rgba(22, 179, 120, 0.2);
-        }
-
-        /* Bouton Principal */
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--grist-primary);
-            color: #ffffff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--anim-speed);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%; /* Mobile first */
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        @media (min-width: 600px) {
-            .btn-primary { width: auto; float: right; }
-        }
-
-        /* =========================================
-           4. CARTES TÂCHES (CARD DESIGN)
-           ========================================= */
-        .task-list {
+        /* --- 2. HEADER & NAVIGATION --- */
+        .header {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-md);
-            padding-bottom: 40px; /* Espace scroll */
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
         }
 
-        .task-card {
-            background-color: var(--grist-card-bg);
-            border: 1px solid var(--grist-border);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-md);
-            position: relative;
-            transition: all var(--anim-speed) ease-in-out;
-            cursor: pointer;
-            border-left: 4px solid transparent; /* Prêt pour sélection */
-        }
-
-        .task-card:hover {
-            background-color: #fff;
-            box-shadow: var(--shadow-hover);
-            transform: translateY(-2px);
-        }
-
-        .task-card.active {
-            border-left-color: var(--grist-primary);
-            background-color: #fff;
-            box-shadow: var(--shadow-card);
-        }
-
-        /* En-tête de carte */
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 700;
+        .app-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text);
             margin: 0;
-            color: var(--grist-text);
-            line-height: 1.3;
+            letter-spacing: -0.5px;
         }
 
-        /* Badges & Tags */
-        .badge-container {
+        .nav-tabs {
             display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-xs);
-            margin-bottom: var(--spacing-md);
+            gap: 4px;
+            background: var(--card-bg);
+            padding: 4px;
+            border-radius: var(--radius);
+            width: fit-content;
         }
 
-        .badge {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 100px;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 2px rgba(0,0,0,0.1);
-        }
-
-        .badge.priority {
-            background-color: #7f8c8d; /* Gris par défaut */
-        }
-        
-        .badge.priority-high { background-color: #e74c3c; }
-        .badge.priority-medium { background-color: #f39c12; }
-        .badge.priority-low { background-color: #27ae60; }
-
-        /* Métadonnées (Lignes du bas) */
-        .card-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
+        .tab-btn {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            font-weight: 600;
             color: #666;
-            padding-top: var(--spacing-sm);
-            border-top: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .meta-item {
+        .tab-btn.active {
+            background: #fff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* --- 3. CONTRÔLES (Filtres & Action) --- */
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .control-item { flex: 1; min-width: 140px; }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-weight: 700;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        /* Barre de progression */
-        .progress-track {
-            height: 6px;
-            background-color: #e0e0e0;
-            border-radius: 3px;
-            margin-top: var(--spacing-sm);
+        /* --- 4. VUES --- */
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* VUE 1: LISTE (CARDS) */
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: transform 0.1s;
+        }
+        .card:hover { transform: translateY(-1px); border-color: var(--primary); }
+        
+        .badges-row { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; color: #fff; }
+
+        /* VUE 2: GANTT (CSS PURE) */
+        .gantt-container {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg);
+            overflow-x: auto;
+        }
+        .gantt-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: #f0f0f0;
+            font-weight: bold;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+        }
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+            height: 36px;
+        }
+        .gantt-label {
+            width: 120px;
+            flex-shrink: 0;
+            font-weight: 600;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
+            font-size: 12px;
         }
-
-        .progress-fill {
+        .gantt-track {
+            flex-grow: 1;
+            position: relative;
             height: 100%;
-            background-color: var(--grist-primary);
-            border-radius: 3px;
-            transition: width 0.4s ease-out;
-        }
-
-        /* États vides / Chargement */
-        .state-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
             background: rgba(0,0,0,0.02);
-            border-radius: var(--radius-md);
-            border: 2px dashed var(--grist-border);
-            margin-top: 20px;
+            border-radius: 4px;
         }
+        .gantt-bar {
+            position: absolute;
+            height: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 8px;
+            min-width: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            transition: width 0.5s ease;
+        }
+        .gantt-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px;
+            font-size: 10px;
+            border-radius: 4px;
+            display: none;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .gantt-bar:hover .gantt-tooltip { display: block; }
+
+        /* VUE 3: DASHBOARD */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .kpi-value { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .kpi-label { font-size: 11px; text-transform: uppercase; color: #666; margin-top: 4px; }
+
+        .chart-fake {
+            height: 12px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+        }
+        .chart-segment { height: 100%; }
+
     </style>
 </head>
 <body>
 
-    <div class="widget-header">
-        <div class="filters-wrapper">
-            <select id="filter-team" class="form-control" aria-label="Filtrer par administration">
-                <option value="all">Toutes les administrations</option>
-                </select>
-            
-            <select id="filter-project" class="form-control" aria-label="Filtrer par projet">
-                <option value="all">Tous les projets</option>
-                </select>
+    <div class="header">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1 class="app-title">Gantt'FIP</h1>
+            <button class="btn-add" onclick="createTask()">+ Tâche</button>
         </div>
-
-        <div style="overflow: hidden;"> <button id="btn-create" class="btn-primary">
-                <span>+ Nouvelle Tâche</span>
-            </button>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchView('list')">Liste</button>
+            <button class="tab-btn" onclick="switchView('gantt')">Gantt</button>
+            <button class="tab-btn" onclick="switchView('dashboard')">Tableau de Bord</button>
         </div>
     </div>
 
-    <div id="app-container" class="task-list">
-        <div class="state-message">Chargement des données Grist...</div>
+    <div class="controls">
+        <div class="control-item">
+            <select id="filter-team" onchange="applyFilters()">
+                <option value="all">Toutes les Admin.</option>
+            </select>
+        </div>
+        <div class="control-item">
+            <select id="filter-project" onchange="applyFilters()">
+                <option value="all">Tous les Projets</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="view-list" class="view-section active">
+        <div id="list-container" class="task-list">Chargement...</div>
+    </div>
+
+    <div id="view-gantt" class="view-section">
+        <div class="gantt-header" id="gantt-dates">
+            <span>Début Période</span>
+            <span>Fin Période</span>
+        </div>
+        <div id="gantt-container" class="gantt-container">
+            </div>
+        <div style="text-align:center; font-style:italic; color:#999; margin-top:8px;">
+            Seules les tâches avec dates sont affichées.
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="view-section">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-total">0</div>
+                <div class="kpi-label">Tâches</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-progress">0%</div>
+                <div class="kpi-label">Avancement Moyen</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-late" style="color:var(--danger)">0</div>
+                <div class="kpi-label">En Retard</div>
+            </div>
+        </div>
+        
+        <h4 style="margin:0 0 10px 0">Répartition par Administration</h4>
+        <div id="bar-chart" class="chart-fake" style="margin-bottom: 20px;"></div>
+        <div id="legend-chart" style="display:flex; gap:10px; flex-wrap:wrap; font-size:11px;"></div>
     </div>
 
 <script>
-    /**
-     * =========================================================================
-     * ARCHITECTURE LOGICIELLE : MODÈLE - VUE - CONTROLEUR (MVC)
-     * Version: 4.0 (Enterprise)
-     * =========================================================================
-     */
+    // --- CONFIGURATION STRICTE ---
+    const MAPPING = [
+        { name: 'Title',     title: 'Titre' },
+        { name: 'Assignee',  title: 'Responsable' },
+        { name: 'Team',      title: 'Administration' }, // Filtre Admin
+        { name: 'Project',   title: 'Projet' },         // Filtre Projet
+        { name: 'StartDate', title: 'Début', type: 'Date' },
+        { name: 'EndDate',   title: 'Fin',   type: 'Date' },
+        { name: 'Progress',  title: 'Progression', type: 'Numeric' },
+        { name: 'Priority',  title: 'Priorité' }
+    ];
 
-    // --- 1. CONFIGURATION GLOBALE & CONSTANTES ---
-    const CONFIG = {
-        // Mapping strict des colonnes basé sur ton CSV "Document sans titre-TACHES_MASTER.csv"
-        COLUMNS: [
-            { name: 'Title',     title: 'Titre',         type: 'Text' },
-            { name: 'Assignee',  title: 'Responsable',   type: 'Text' },
-            { name: 'Team',      title: 'Administration',type: 'Choice' },
-            { name: 'Project',   title: 'Projet',        type: 'Choice' },
-            { name: 'StartDate', title: 'Début',         type: 'Date' },
-            { name: 'EndDate',   title: 'Fin',           type: 'Date' }, // Point Critique: EndDate
-            { name: 'Progress',  title: 'Progression',   type: 'Numeric' },
-            { name: 'Priority',  title: 'Priorité',      type: 'Choice' }
-        ],
-        // Valeurs par défaut pour la création
-        DEFAULTS: {
-            Title: 'Nouvelle Tâche',
-            Priority: 'Medium',
-            Progress: 0
-        },
-        // Seuil pour la détection Date vs DateTime (Grist Standard)
-        DATE_THRESHOLD: 100000
+    let state = {
+        records: [],
+        filtered: [],
+        filters: { team: 'all', project: 'all' },
+        currentView: 'list'
     };
 
-    /**
-     * --- 2. BOÎTE À OUTILS UTILITAIRE (UTILS) ---
-     * Fonctions pures, réutilisables et sans effets de bord.
-     */
-    const Utils = {
-        /**
-         * Convertit une valeur numérique Grist en objet Date JS.
-         * Gère automatiquements les secondes (DateTime) et les jours (Date).
-         */
-        gristDateToJS: function(value) {
-            if (!value && value !== 0) return null;
-            return value > CONFIG.DATE_THRESHOLD 
-                ? new Date(value * 1000) 
-                : new Date(value * 24 * 60 * 60 * 1000);
-        },
-
-        /**
-         * Convertit une Date JS en format numérique Grist (Jours).
-         */
-        jsDateToGrist: function(date) {
-            if (!date) return null;
-            const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-            return Math.floor(utcDate / (24 * 60 * 60 * 1000));
-        },
-
-        /**
-         * Formate une date pour l'affichage humain (FR).
-         */
-        formatDate: function(dateObj) {
-            if (!dateObj) return 'Non défini';
-            return dateObj.toLocaleDateString('fr-FR', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-            });
-        },
-
-        /**
-         * Génère une couleur HSL unique et consistante à partir d'une chaîne.
-         * Assure que "DGFIP" a toujours la même couleur.
-         */
-        stringToColor: function(str) {
-            if (!str) return '#95a5a6'; // Gris par défaut
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            // H: 0-360, S: 60-70% (Vif), L: 40-45% (Lisible texte blanc)
-            const h = Math.abs(hash) % 360;
-            return `hsl(${h}, 65%, 42%)`;
-        },
-
-        /**
-         * Sécurise la transformation des données tabulaires Grist en objets.
-         * Crucial pour éviter les crashs si le format change.
-         */
-        safeTableToRecords: function(tableData) {
-            if (!tableData) return [];
-            // Cas 1: Déjà un tableau d'objets (Mode Record)
-            if (Array.isArray(tableData)) return tableData;
-            
-            // Cas 2: Objet de colonnes (Mode Table - le plus courant)
-            const columns = Object.keys(tableData);
-            if (!columns.length) return [];
-            
-            const rowCount = tableData[columns[0]]?.length || 0;
-            const records = [];
-            
-            for (let i = 0; i < rowCount; i++) {
-                const record = { id: tableData.id[i] };
-                columns.forEach(col => {
-                    if (col !== 'id') record[col] = tableData[col][i];
-                });
-                records.push(record);
-            }
-            return records;
+    // --- UTILITAIRES ---
+    function cleanData(tableData) {
+        if (!tableData) return [];
+        if (Array.isArray(tableData)) return tableData;
+        const keys = Object.keys(tableData);
+        if (!keys.length) return [];
+        const count = tableData[keys[0]].length;
+        const res = [];
+        for(let i=0; i<count; i++) {
+            let obj = { id: tableData.id[i] };
+            keys.forEach(k => { if(k !== 'id') obj[k] = tableData[k][i]; });
+            res.push(obj);
         }
-    };
+        return res;
+    }
 
-    /**
-     * --- 3. GESTION DE L'ÉTAT (STORE) ---
-     * Centralise les données et la logique de filtrage.
-     */
-    const Store = {
-        data: [],           // Tous les enregistrements bruts
-        filteredData: [],   // Enregistrements après filtre
-        selectedId: null,   // ID de la ligne sélectionnée dans Grist
-        filters: {
-            team: 'all',
-            project: 'all'
-        },
+    function gristDate(val) {
+        if (!val && val !== 0) return null;
+        return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
+    }
+    
+    function dateToGrist(d) {
+        return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    }
 
-        // Met à jour les données brutes
-        setData(newData) {
-            this.data = Utils.safeTableToRecords(newData);
-            this.applyFilters();
-        },
+    function getColor(str) {
+        if (!str) return '#ccc';
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
+    }
 
-        // Met à jour l'ID sélectionné
-        setSelected(id) {
-            this.selectedId = id;
-        },
+    function formatDate(d) {
+        return d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-';
+    }
 
-        // Applique les filtres courants sur les données
-        applyFilters() {
-            this.filteredData = this.data.filter(record => {
-                const matchTeam = this.filters.team === 'all' || record.Team === this.filters.team;
-                const matchProject = this.filters.project === 'all' || record.Project === this.filters.project;
-                return matchTeam && matchProject;
-            });
-        },
+    // --- NAVIGATION ---
+    function switchView(viewName) {
+        state.currentView = viewName;
+        // Update Tabs
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.tab-btn[onclick="switchView('${viewName}')"]`).classList.add('active');
+        // Update Content
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.add('active');
+        
+        // Re-render si nécessaire (notamment Gantt qui dépend de la largeur)
+        render(); 
+    }
 
-        // Change un filtre et recalcule
-        setFilter(type, value) {
-            if (this.filters.hasOwnProperty(type)) {
-                this.filters[type] = value;
-                this.applyFilters();
-            }
-        },
-
-        // Extrait les valeurs uniques pour les menus déroulants
-        getUniqueValues(field) {
-            return [...new Set(this.data.map(r => r[field]).filter(val => val))].sort();
-        }
-    };
-
-    /**
-     * --- 4. GESTION DE L'INTERFACE (VIEW) ---
-     * Manipule le DOM. Ne touche pas aux données directement.
-     */
-    const View = {
-        els: {
-            app: document.getElementById('app-container'),
-            filterTeam: document.getElementById('filter-team'),
-            filterProject: document.getElementById('filter-project'),
-            btnCreate: document.getElementById('btn-create')
-        },
-
-        initListeners() {
-            // Écouteurs pour les filtres
-            this.els.filterTeam.addEventListener('change', (e) => {
-                Controller.onFilterChange('team', e.target.value);
-            });
-            this.els.filterProject.addEventListener('change', (e) => {
-                Controller.onFilterChange('project', e.target.value);
-            });
-            // Écouteur création
-            this.els.btnCreate.addEventListener('click', () => {
-                Controller.onCreateTask();
-            });
-        },
-
-        // Met à jour les options des select (seulement si nécessaire)
-        renderFilters() {
-            this.updateSelectOptions(this.els.filterTeam, Store.getUniqueValues('Team'), Store.filters.team, 'Toutes les administrations');
-            this.updateSelectOptions(this.els.filterProject, Store.getUniqueValues('Project'), Store.filters.project, 'Tous les projets');
-        },
-
-        // Helper pour construire les <option>
-        updateSelectOptions(selectEl, values, currentValue, defaultLabel) {
-            // On vérifie si on doit reconstruire pour ne pas perdre le focus ou clignoter
-            // Une implémentation simple : on vide et on remplit à chaque gros changement de données
-            // Optimisation : Sauvegarder la valeur courante
-            const savedValue = currentValue;
-            
-            selectEl.innerHTML = `<option value="all">${defaultLabel}</option>`;
-            values.forEach(val => {
-                const option = document.createElement('option');
-                option.value = val;
-                option.textContent = val;
-                selectEl.appendChild(option);
-            });
-            
-            // Restauration valeur
-            selectEl.value = values.includes(savedValue) ? savedValue : 'all';
-        },
-
-        // Affiche la liste des tâches
-        renderList() {
-            this.els.app.innerHTML = '';
-
-            if (Store.filteredData.length === 0) {
-                this.els.app.innerHTML = `
-                    <div class="state-message">
-                        Aucune tâche ne correspond à vos filtres.<br>
-                        <small>Essayez de réinitialiser les filtres.</small>
-                    </div>`;
-                return;
-            }
-
-            Store.filteredData.forEach(record => {
-                const card = this.buildCard(record);
-                this.els.app.appendChild(card);
-            });
-        },
-
-        // Construit le HTML d'une carte individuelle
-        buildCard(record) {
-            const card = document.createElement('div');
-            const isSelected = record.id === Store.selectedId;
-            card.className = `task-card ${isSelected ? 'active' : ''}`;
-            
-            // Interaction
-            card.onclick = () => Controller.onRecordSelect(record.id);
-
-            // Préparation Données
-            const endJS = Utils.gristDateToJS(record.EndDate);
-            const dateStr = Utils.formatDate(endJS);
-            const progress = record.Progress || 0;
-            
-            // Badges HTML
-            let badges = '';
-            // Badge Projet
-            if (record.Project) {
-                const bg = Utils.stringToColor(record.Project);
-                badges += `<span class="badge" style="background-color: ${bg}">${record.Project}</span>`;
-            }
-            // Badge Team
-            if (record.Team) {
-                const bg = Utils.stringToColor(record.Team);
-                badges += `<span class="badge" style="background-color: ${bg}">${record.Team}</span>`;
-            }
-            // Badge Priorité (si existe)
-            if (record.Priority) {
-                let prioClass = 'priority';
-                if(record.Priority.toLowerCase().includes('high')) prioClass = 'priority-high';
-                if(record.Priority.toLowerCase().includes('med')) prioClass = 'priority-medium';
-                if(record.Priority.toLowerCase().includes('low')) prioClass = 'priority-low';
-                badges += `<span class="badge ${prioClass}">${record.Priority}</span>`;
-            }
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <h3 class="card-title">${record.Title || 'Sans titre'}</h3>
-                </div>
-                
-                <div class="badge-container">
-                    ${badges}
-                </div>
-                
-                <div class="card-meta">
-                    <div class="meta-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        <span>&nbsp;${record.Assignee || 'Personne'}</span>
-                    </div>
-                    <div class="meta-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span>&nbsp;${dateStr}</span>
-                    </div>
-                </div>
-
-                <div class="progress-track" title="Progression: ${progress}%">
-                    <div class="progress-fill" style="width: ${progress}%"></div>
-                </div>
-            `;
-            
-            return card;
-        }
-    };
-
-    /**
-     * --- 5. ORCHESTRATEUR (CONTROLLER) ---
-     * Fait le lien entre Grist, le Store et la Vue.
-     */
-    const Controller = {
-        init() {
-            // Configuration Grist
-            grist.ready({
-                columns: CONFIG.COLUMNS,
-                requiredAccess: 'full'
-            });
-
-            // Écouteur principal de données
-            grist.onRecords((data) => {
-                Store.setData(data);
-                View.renderFilters(); // Met à jour les menus déroulants
-                View.renderList();    // Affiche les cartes
-            });
-
-            // Écouteur de sélection
-            grist.onRecord((record) => {
-                if (record) {
-                    Store.setSelected(record.id);
-                    View.renderList(); // Re-render pour la bordure active
-                }
-            });
-
-            // Initialisation Vue
-            View.initListeners();
-        },
-
-        // Action: Changement de filtre
-        onFilterChange(type, value) {
-            Store.setFilter(type, value);
-            View.renderList();
-        },
-
-        // Action: Sélection d'une carte
-        onRecordSelect(id) {
-            Store.setSelected(id);
-            grist.setSelectedRows([id]); // Sync avec Grist
-        },
-
-        // Action: Création de tâche
-        async onCreateTask() {
-            const todayGrist = Utils.jsDateToGrist(new Date());
-            
-            // Préparation de l'objet (Mapping strict pour éviter Key Error)
-            const newRecord = {
-                Title: CONFIG.DEFAULTS.Title,
-                StartDate: todayGrist,
-                Progress: CONFIG.DEFAULTS.Progress,
-                Priority: CONFIG.DEFAULTS.Priority
-            };
-
-            // Ajout intelligent des contextes de filtre
-            if (Store.filters.team !== 'all') {
-                newRecord.Team = Store.filters.team;
-            }
-            if (Store.filters.project !== 'all') {
-                newRecord.Project = Store.filters.project;
-            }
-
-            try {
-                // Appel API Grist
-                await grist.selectedTable.create({ fields: newRecord });
-            } catch (err) {
-                console.error("Erreur création:", err);
-                alert("Erreur Key Error: Impossible de créer la tâche. Vérifiez que les colonnes 'Team', 'Project', 'EndDate' existent bien dans la vue et correspondent aux IDs.");
-            }
-        }
-    };
-
-    // --- Lancement de l'application ---
-    document.addEventListener('DOMContentLoaded', () => {
-        Controller.init();
+    // --- LOGIQUE GRIST ---
+    grist.ready({ columns: MAPPING, requiredAccess: 'full' });
+    grist.onRecords(data => {
+        state.records = cleanData(data);
+        updateFiltersUI();
+        applyFilters();
     });
 
+    function updateFiltersUI() {
+        // Remplir les Selects seulement si vides (pour ne pas reset sélection)
+        const teamSel = document.getElementById('filter-team');
+        const projSel = document.getElementById('filter-project');
+        
+        const teams = [...new Set(state.records.map(r => r.Team).filter(Boolean))].sort();
+        const projs = [...new Set(state.records.map(r => r.Project).filter(Boolean))].sort();
+
+        const saveT = teamSel.value;
+        const saveP = projSel.value;
+
+        teamSel.innerHTML = `<option value="all">Toutes les Admin.</option>` + 
+            teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        
+        projSel.innerHTML = `<option value="all">Tous les Projets</option>` + 
+            projs.map(p => `<option value="${p}">${p}</option>`).join('');
+
+        if(teams.includes(saveT)) teamSel.value = saveT;
+        if(projs.includes(saveP)) projSel.value = saveP;
+    }
+
+    function applyFilters() {
+        state.filters.team = document.getElementById('filter-team').value;
+        state.filters.project = document.getElementById('filter-project').value;
+
+        state.filtered = state.records.filter(r => {
+            const okTeam = state.filters.team === 'all' || r.Team === state.filters.team;
+            const okProj = state.filters.project === 'all' || r.Project === state.filters.project;
+            return okTeam && okProj;
+        });
+
+        render();
+    }
+
+    async function createTask() {
+        const fields = { 
+            Title: 'Nouvelle Tâche', 
+            StartDate: dateToGrist(new Date()),
+            Progress: 0 
+        };
+        if(state.filters.team !== 'all') fields.Team = state.filters.team;
+        if(state.filters.project !== 'all') fields.Project = state.filters.project;
+        
+        try { await grist.selectedTable.create({ fields }); }
+        catch(e) { alert("Erreur Création. Vérifiez IDs colonnes (Team, Project, EndDate)"); }
+    }
+
+    // --- RENDU GLOBAL ---
+    function render() {
+        if(state.currentView === 'list') renderList();
+        else if(state.currentView === 'gantt') renderGantt();
+        else renderDashboard();
+    }
+
+    // 1. RENDER LISTE
+    function renderList() {
+        const div = document.getElementById('list-container');
+        div.innerHTML = '';
+        if(!state.filtered.length) { div.innerHTML = '<div style="text-align:center;color:#999">Aucune tâche.</div>'; return; }
+
+        state.filtered.forEach(row => {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.onclick = () => grist.setSelectedRows([row.id]);
+            
+            const badges = [];
+            if(row.Team) badges.push({txt: row.Team, bg: getColor(row.Team)});
+            if(row.Project) badges.push({txt: row.Project, bg: getColor(row.Project)});
+            
+            const progress = row.Progress || 0;
+            const endDate = gristDate(row.EndDate);
+            const isLate = endDate && endDate < new Date() && progress < 100;
+
+            el.innerHTML = `
+                <div style="display:flex; justify-content:space-between">
+                    <span style="font-weight:700">${row.Title || 'Sans Titre'}</span>
+                    ${isLate ? '<span style="color:red; font-weight:bold">!</span>' : ''}
+                </div>
+                <div class="badges-row">
+                    ${badges.map(b => `<span class="badge" style="background:${b.bg}">${b.txt}</span>`).join('')}
+                </div>
+                <div style="font-size:11px; color:#666; display:flex; justify-content:space-between; margin-top:8px">
+                    <span>${row.Assignee || 'Non assigné'}</span>
+                    <span>${formatDate(endDate)}</span>
+                </div>
+                <div style="height:4px; background:#eee; border-radius:2px; margin-top:6px; overflow:hidden">
+                    <div style="height:100%; width:${progress}%; background:${isLate ? 'red' : 'var(--primary)'}"></div>
+                </div>
+            `;
+            div.appendChild(el);
+        });
+    }
+
+    // 2. RENDER GANTT (ALGORITHME)
+    function renderGantt() {
+        const div = document.getElementById('gantt-container');
+        div.innerHTML = '';
+        
+        // Filtrer tâches avec dates valides
+        const tasks = state.filtered.filter(r => r.StartDate && r.EndDate).map(r => ({
+            ...r,
+            start: gristDate(r.StartDate),
+            end: gristDate(r.EndDate)
+        })).sort((a,b) => a.start - b.start);
+
+        if(!tasks.length) { div.innerHTML = '<div style="padding:20px; text-align:center">Pas de dates définies pour le Gantt.</div>'; return; }
+
+        // Trouver bornes temporelles globales
+        let minT = new Date(Math.min(...tasks.map(t => t.start))).getTime();
+        let maxT = new Date(Math.max(...tasks.map(t => t.end))).getTime();
+        
+        // Ajouter Marge (1 jour avant/après)
+        const dayMs = 86400000;
+        minT -= dayMs;
+        maxT += dayMs;
+        const totalDuration = maxT - minT;
+
+        // Mise à jour header dates
+        const header = document.getElementById('gantt-dates');
+        header.innerHTML = `<span>${formatDate(new Date(minT))}</span><span>${formatDate(new Date(maxT))}</span>`;
+
+        tasks.forEach(task => {
+            const row = document.createElement('div');
+            row.className = 'gantt-row';
+            
+            // Calcul positions %
+            const startPct = ((task.start.getTime() - minT) / totalDuration) * 100;
+            const widthPct = Math.max(((task.end.getTime() - task.start.getTime()) / totalDuration) * 100, 1); // Min 1% width
+            
+            const color = task.Project ? getColor(task.Project) : '#999';
+
+            row.innerHTML = `
+                <div class="gantt-label" title="${task.Title}">${task.Title}</div>
+                <div class="gantt-track">
+                    <div class="gantt-bar" style="left:${startPct}%; width:${widthPct}%; background:${color}">
+                        <div class="gantt-tooltip">
+                            ${formatDate(task.start)} au ${formatDate(task.end)} (${task.Progress || 0}%)
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Clic sur ligne = sélection Grist
+            row.onclick = () => grist.setSelectedRows([task.id]);
+            div.appendChild(row);
+        });
+    }
+
+    // 3. RENDER DASHBOARD (KPIs)
+    function renderDashboard() {
+        const data = state.filtered;
+        const total = data.length;
+        
+        // Calculs
+        const avgProgress = total ? Math.round(data.reduce((acc, r) => acc + (r.Progress||0), 0) / total) : 0;
+        const now = new Date();
+        const lateCount = data.filter(r => {
+            const end = gristDate(r.EndDate);
+            return end && end < now && (r.Progress||0) < 100;
+        }).length;
+
+        // Injection DOM
+        document.getElementById('kpi-total').innerText = total;
+        document.getElementById('kpi-progress').innerText = avgProgress + '%';
+        document.getElementById('kpi-late').innerText = lateCount;
+
+        // Mini Chart par Team
+        const teamCounts = {};
+        data.forEach(r => { 
+            const t = r.Team || 'Autre'; 
+            teamCounts[t] = (teamCounts[t] || 0) + 1; 
+        });
+        
+        const chartDiv = document.getElementById('bar-chart');
+        const legendDiv = document.getElementById('legend-chart');
+        chartDiv.innerHTML = ''; 
+        legendDiv.innerHTML = '';
+
+        Object.keys(teamCounts).forEach(team => {
+            const count = teamCounts[team];
+            const pct = (count / total) * 100;
+            const color = getColor(team);
+            
+            // Segment barre
+            const seg = document.createElement('div');
+            seg.className = 'chart-segment';
+            seg.style.width = pct + '%';
+            seg.style.background = color;
+            chartDiv.appendChild(seg);
+
+            // Légende
+            legendDiv.innerHTML += `
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="width:8px; height:8px; background:${color}; border-radius:50%"></span>
+                    <span>${team} (${count})</span>
+                </div>`;
+        });
+    }
 </script>
 </body>
 </html>
