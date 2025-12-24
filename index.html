@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Ultimate</title>
+    <title>Gantt'FIP Ultimate v6.5</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <style>
         /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
@@ -42,6 +42,7 @@
             font-size: 14px;
             line-height: 1.5;
             padding-bottom: 80px; /* Espace pour le FAB mobile */
+            user-select: none; /* Important pour Drag & Drop */
         }
 
         /* --- 2. LAYOUT & NAVIGATION --- */
@@ -99,7 +100,7 @@
         /* --- 3. ACTIONS & FILTRES --- */
         .toolbar {
             display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            grid-template-columns: 1fr 1fr auto auto; /* Ajout colonne pour PDF */
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -164,8 +165,6 @@
         .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
         .stat-footer { font-size: 12px; color: var(--text-sec); display: flex; align-items: center; gap: 4px; }
 
-        .section-title { font-size: 16px; font-weight: 700; margin: 30px 0 16px 0; color: var(--text-main); }
-        
         .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
         
@@ -187,13 +186,26 @@
             border: 1px solid var(--border);
             overflow-x: auto;
             padding: 16px;
+            position: relative; /* Pour le positionnement absolu */
         }
         .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
         .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; cursor: pointer; }
         .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
-        .gantt-block { position: absolute; height: 16px; top: 4px; border-radius: 4px; min-width: 8px; cursor: pointer; transition: opacity 0.2s; }
-        .gantt-block:hover { opacity: 0.8; }
+        
+        /* Modif Gantt Block pour Drag */
+        .gantt-block { 
+            position: absolute; 
+            height: 16px; 
+            top: 4px; 
+            border-radius: 4px; 
+            min-width: 8px; 
+            cursor: grab; 
+            transition: box-shadow 0.2s, opacity 0.2s; 
+            z-index: 10;
+        }
+        .gantt-block:hover { opacity: 0.9; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .gantt-block:active { cursor: grabbing; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 20; }
 
         /* VUE 3: LISTE */
         .task-list { display: flex; flex-direction: column; gap: 12px; }
@@ -267,6 +279,29 @@
         
         /* Loading */
         .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
+
+        /* --- 6. PRINT / PDF STYLES (AJOUT) --- */
+        @media print {
+            body { background: white; padding: 0; margin: 0; overflow: visible; }
+            .app-header, .toolbar, .close-btn, .modal-overlay, .btn-primary, .btn-sec { display: none !important; }
+            
+            /* On force l'affichage de la vue courante */
+            .view-container { display: block !important; width: 100% !important; animation: none; }
+            .gantt-wrapper, .dashboard-grid, .task-list { 
+                border: none; 
+                box-shadow: none; 
+                width: 100%; 
+                overflow: visible; 
+            }
+            .gantt-wrapper { overflow-x: hidden; }
+            
+            /* Ajustement couleurs pour impression */
+            .gantt-block, .bar-fill, .tag, .stat-card {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            @page { size: landscape; margin: 1cm; }
+        }
     </style>
 </head>
 <body>
@@ -293,6 +328,9 @@
         <select id="filter-project" class="select-modern" onchange="handleFilters()">
             <option value="all">Tous les projets</option>
         </select>
+        <button class="btn-sec" onclick="window.print()">
+            🖨️ PDF / Print
+        </button>
     </div>
 
     <div id="app-content">
@@ -369,7 +407,7 @@
 <script>
     /**
      * ===========================================
-     * GANTT'FIP ULTIMATE - V6 ENGINE
+     * GANTT'FIP ULTIMATE - V6.5 (DRAG ENABLED)
      * ===========================================
      */
 
@@ -396,9 +434,21 @@
         uniqueAssignees: []
     };
 
+    // DRAG STATE (AJOUT)
+    let dragState = {
+        isDragging: false,
+        element: null,
+        recordId: null,
+        startX: 0,
+        initialLeft: 0,
+        timelineWidth: 0,
+        span: 0,
+        originalStart: 0,
+        originalEnd: 0
+    };
+
     // --- 2. UTILITAIRES ---
     const Utils = {
-        // Date Grist (Sec vs Days)
         fromGristDate: (val) => {
             if (!val && val !== 0) return null;
             return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
@@ -409,9 +459,7 @@
             return Math.floor(utc / 86400000);
         },
         formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
-        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', // Pour input type="date"
-        
-        // Couleur HASH consistante
+        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', 
         stringToColor: (str) => {
             if (!str) return '#94a3b8';
             let hash = 0;
@@ -419,8 +467,6 @@
             const h = Math.abs(hash) % 360;
             return `hsl(${h}, 70%, 45%)`;
         },
-
-        // Nettoyage données Table -> Liste d'objets
         cleanData: (data) => {
             if (Array.isArray(data)) return data;
             if (!data) return [];
@@ -443,7 +489,7 @@
         state.allRecords = Utils.cleanData(data);
         extractUniqueValues();
         updateFilterSelects();
-        handleFilters(); // Déclenche le render
+        handleFilters(); 
     });
 
     function extractUniqueValues() {
@@ -454,10 +500,8 @@
 
     // --- 4. LOGIQUE FILTRES ---
     function updateFilterSelects() {
-        // Conserve sélection user
         const tVal = document.getElementById('filter-team').value;
         const pVal = document.getElementById('filter-project').value;
-
         const tSelect = document.getElementById('filter-team');
         const pSelect = document.getElementById('filter-project');
 
@@ -486,7 +530,6 @@
 
     function switchView(view) {
         state.currentView = view;
-        // Update tabs UI
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
         renderCurrentView();
@@ -512,73 +555,50 @@
         const data = state.filteredRecords;
         const total = data.length;
         const now = new Date();
-
-        // Stats
         const done = data.filter(r => (r.Progress||0) == 100).length;
         const late = data.filter(r => {
             const end = Utils.fromGristDate(r.EndDate);
             return end && end < now && (r.Progress||0) < 100;
         }).length;
         const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
-        
         const donePct = total ? Math.round((done/total)*100) : 0;
 
-        // HTML
         container.innerHTML = `
             <div class="dashboard-grid">
                 <div class="stat-card">
-                    <div>
-                        <div class="stat-title">Total Tâches</div>
-                        <div class="stat-value" style="color:var(--primary)">${total}</div>
-                    </div>
+                    <div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:var(--primary)">${total}</div></div>
                     <div class="stat-footer">Toutes tâches confondues</div>
                 </div>
                 <div class="stat-card">
-                    <div>
-                        <div class="stat-title">Terminées</div>
-                        <div class="stat-value text-success">${done}</div>
-                    </div>
+                    <div><div class="stat-title">Terminées</div><div class="stat-value text-success">${done}</div></div>
                     <div class="stat-footer">${donePct}% du total</div>
                 </div>
                 <div class="stat-card">
-                    <div>
-                        <div class="stat-title">En Retard</div>
-                        <div class="stat-value text-danger">${late}</div>
-                    </div>
+                    <div><div class="stat-title">En Retard</div><div class="stat-value text-danger">${late}</div></div>
                     <div class="stat-footer">À traiter en urgence</div>
                 </div>
                 <div class="stat-card">
-                    <div>
-                        <div class="stat-title">En Cours</div>
-                        <div class="stat-value" style="color:var(--warning)">${inProgress}</div>
-                    </div>
+                    <div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--warning)">${inProgress}</div></div>
                     <div class="stat-footer">Actives</div>
                 </div>
             </div>
-
             <div class="charts-row">
                 <div class="chart-box">
                     <h4 style="margin-top:0">Par Priorité</h4>
                     ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
                 </div>
-
                 <div class="chart-box">
                     <h4 style="margin-top:0">Par Administration</h4>
                     ${renderBarChart(data, 'Team', null)}
                 </div>
-                
                 <div class="chart-box">
                     <h4 style="margin-top:0">Prochaines Échéances</h4>
                     <table class="mini-table">
-                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100)
-                              .sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate))
-                              .slice(0,5)
-                              .map(r => `
-                                <tr>
-                                    <td><strong>${r.Title}</strong></td>
-                                    <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
-                                </tr>
-                              `).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
+                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100).sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate)).slice(0,5).map(r => `
+                            <tr>
+                                <td><strong>${r.Title}</strong></td>
+                                <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
+                            </tr>`).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
                     </table>
                 </div>
             </div>
@@ -587,12 +607,8 @@
 
     function renderBarChart(data, key, colorMap) {
         const counts = {};
-        data.forEach(r => { 
-            const k = r[key] || 'Non défini'; 
-            counts[k] = (counts[k] || 0) + 1; 
-        });
+        data.forEach(r => { const k = r[key] || 'Non défini'; counts[k] = (counts[k] || 0) + 1; });
         const max = Math.max(...Object.values(counts), 1);
-        
         return Object.keys(counts).map(k => {
             const count = counts[k];
             const pct = (count / max) * 100;
@@ -600,15 +616,12 @@
             return `
                 <div class="bar-group">
                     <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
-                    <div class="bar-bg">
-                        <div class="bar-fill" style="width:${pct}%; background:${color}"></div>
-                    </div>
-                </div>
-            `;
+                    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div>
+                </div>`;
         }).join('');
     }
 
-    /** VUE 2 : GANTT **/
+    /** VUE 2 : GANTT (AVEC DRAG & DROP) **/
     function renderGantt(container) {
         const tasks = state.filteredRecords
             .filter(r => r.StartDate && r.EndDate)
@@ -619,7 +632,7 @@
 
         let min = new Date(Math.min(...tasks.map(t => t.start))).getTime();
         let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
-        const padding = 86400000 * 2; // +2 jours marge
+        const padding = 86400000 * 2; 
         min -= padding; max += padding;
         const span = max - min;
 
@@ -635,11 +648,17 @@
             const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
             const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
             
+            // Note: Ajout des ID pour le Drag
             html += `
-                <div class="gantt-line" onclick="openModal(${t.id})">
-                    <div class="gantt-text" title="${t.Title}">${t.Title}</div>
-                    <div class="gantt-timeline">
-                        <div class="gantt-block" style="left:${left}%; width:${width}%; background:${color}" title="${t.Title} (${t.Progress}%)"></div>
+                <div class="gantt-line">
+                    <div class="gantt-text" title="${t.Title}" onclick="openModal(${t.id})">${t.Title}</div>
+                    <div class="gantt-timeline" id="timeline-${t.id}">
+                        <div class="gantt-block" 
+                             id="block-${t.id}"
+                             style="left:${left}%; width:${width}%; background:${color}" 
+                             title="${t.Title} (${t.Progress}%)"
+                             onmousedown="handleDragStart(event, ${t.id}, ${t.start.getTime()}, ${t.end.getTime()}, ${span})">
+                        </div>
                     </div>
                 </div>
             `;
@@ -647,7 +666,82 @@
         
         html += `</div>`;
         container.innerHTML = html;
+
+        // Listeners Globales pour le drag (ajoutés une seule fois)
+        if (!window.dragInitialized) {
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            window.dragInitialized = true;
+        }
     }
+
+    // --- LOGIQUE DRAG AND DROP ---
+    function handleDragStart(e, id, startTs, endTs, totalSpan) {
+        e.preventDefault(); // Evite sélection texte
+        e.stopPropagation(); // Evite click timeline
+
+        const block = document.getElementById(`block-${id}`);
+        const timeline = document.getElementById(`timeline-${id}`);
+
+        dragState = {
+            isDragging: true,
+            element: block,
+            recordId: id,
+            startX: e.clientX,
+            initialLeft: parseFloat(block.style.left), // En %
+            timelineWidth: timeline.offsetWidth,
+            span: totalSpan,
+            originalStart: startTs,
+            originalEnd: endTs,
+            hasMoved: false
+        };
+    }
+
+    function handleDragMove(e) {
+        if (!dragState.isDragging) return;
+        dragState.hasMoved = true;
+        
+        const deltaPx = e.clientX - dragState.startX;
+        const deltaPercent = (deltaPx / dragState.timelineWidth) * 100;
+        
+        // Mise à jour visuelle fluide
+        dragState.element.style.left = (dragState.initialLeft + deltaPercent) + '%';
+    }
+
+    async function handleDragEnd(e) {
+        if (!dragState.isDragging) return;
+
+        if (dragState.hasMoved) {
+            const deltaPx = e.clientX - dragState.startX;
+            // Calcul du shift en millisecondes
+            // Ratio: (deltaPx / largeurTimeline) * duréeTotale
+            const shiftMs = (deltaPx / dragState.timelineWidth) * dragState.span;
+            
+            const newStart = new Date(dragState.originalStart + shiftMs);
+            const newEnd = new Date(dragState.originalEnd + shiftMs);
+
+            // Mise à jour Grist
+            try {
+                await grist.selectedTable.update({
+                    id: dragState.recordId,
+                    fields: {
+                        StartDate: Utils.toGristDate(newStart),
+                        EndDate: Utils.toGristDate(newEnd)
+                    }
+                });
+            } catch (err) {
+                console.error("Erreur Drag:", err);
+                renderCurrentView(); // Revert visuel si erreur
+            }
+        } else {
+            // C'était un simple clic -> Ouvrir modale
+            openModal(dragState.recordId);
+        }
+
+        dragState.isDragging = false;
+        dragState.element = null;
+    }
+
 
     /** VUE 3 : LISTE **/
     function renderList(container) {
@@ -661,11 +755,8 @@
 
         state.filteredRecords.forEach(r => {
             const card = document.createElement('div');
-            // Classe de priorité pour la couleur bordure gauche
             const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
             card.className = `task-card ${prioClass}`;
-            
-            // Clic carte -> Edit Modal
             card.onclick = () => openModal(r.id);
 
             const badges = [];
@@ -681,9 +772,7 @@
                     ${badges.map(b => `<span class="tag" style="background:${b.c}">${b.t}</span>`).join('')}
                 </div>
                 <div class="card-btm">
-                    <div class="avatar-row">
-                        <span>👤 ${r.Assignee || 'Non assigné'}</span>
-                    </div>
+                    <div class="avatar-row"><span>👤 ${r.Assignee || 'Non assigné'}</span></div>
                     <div style="display:flex; gap:10px; align-items:center">
                         <span>📅 ${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</span>
                         ${r.Progress !== undefined ? `<strong>${r.Progress}%</strong>` : ''}
@@ -696,20 +785,15 @@
     }
 
     // --- 6. GESTION MODALE (CRUD COMPLET) ---
-    
-    // Remplit les datalists (Autocomplétion créative)
     function populateDatalists() {
-        const fill = (id, list) => {
-            document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join('');
-        };
+        const fill = (id, list) => { document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join(''); };
         fill('list-teams', state.uniqueTeams);
         fill('list-projects', state.uniqueProjects);
         fill('list-assignees', state.uniqueAssignees);
     }
 
     function openModal(recordId = null) {
-        populateDatalists(); // Rafraîchir les listes
-        
+        populateDatalists();
         const modal = document.getElementById('modal');
         const title = document.getElementById('modal-title');
         
@@ -726,7 +810,6 @@
         document.getElementById('range-progress').value = 0;
 
         if (recordId) {
-            // MODE EDITION
             const r = state.allRecords.find(x => x.id === recordId);
             if (r) {
                 title.innerText = "Modifier la Tâche";
@@ -741,36 +824,23 @@
                 const prog = r.Progress || 0;
                 document.getElementById('input-progress').value = prog;
                 document.getElementById('range-progress').value = prog;
-                
-                // Sélectionner aussi dans Grist pour le focus
                 grist.setSelectedRows([r.id]);
             }
         } else {
-            // MODE CREATION
             title.innerText = "Nouvelle Tâche";
-            // Pré-remplir avec les filtres actuels s'ils sont actifs
             if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
             if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
-            
-            // Dates par défaut (Aujourd'hui)
             const today = Utils.inputDate(new Date());
             document.getElementById('input-start').value = today;
             document.getElementById('input-end').value = today;
         }
-
         modal.classList.add('open');
     }
 
-    function closeModal() {
-        document.getElementById('modal').classList.remove('open');
-    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
     async function saveTask() {
-        const id = document.getElementById('input-id').value; // String, vide si création
-        
-        // Récupération des valeurs
-        // Note: Pour les champs Choice (Team, Project), Grist acceptera la nouvelle valeur texte
-        // si la colonne est configurée pour, ou si c'est une colonne Texte simple.
+        const id = document.getElementById('input-id').value;
         const fields = {
             Title: document.getElementById('input-title').value || 'Nouvelle Tâche',
             Team: document.getElementById('input-team').value,
@@ -783,21 +853,15 @@
         };
 
         try {
-            if (id) {
-                // UPDATE
-                await grist.selectedTable.update({ id: parseInt(id), fields });
-            } else {
-                // CREATE
-                await grist.selectedTable.create({ fields });
-            }
+            if (id) await grist.selectedTable.update({ id: parseInt(id), fields });
+            else await grist.selectedTable.create({ fields });
             closeModal();
         } catch (e) {
             console.error(e);
-            alert("Erreur lors de la sauvegarde. Vérifiez les droits d'accès ou les noms de colonnes.");
+            alert("Erreur lors de la sauvegarde.");
         }
     }
 
-    // Synchro Range/Number pour le slider de progression
     document.getElementById('input-progress').addEventListener('input', function() {
         document.getElementById('range-progress').value = this.value;
     });
