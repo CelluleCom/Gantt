@@ -3,564 +3,804 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Manager</title>
+    <title>Gantt'FIP Ultimate</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <style>
-        /* --- 1. VARIABLES & THÈME --- */
+        /* --- 1. DESIGN SYSTEM (MODERNE & ARRONDI) --- */
         :root {
-            --primary: var(--grist-theme-cursor, #16b378);
-            --bg: var(--grist-theme-page-bg, #ffffff);
-            --text: var(--grist-theme-text, #333333);
-            --border: var(--grist-theme-border, #d9d9d9);
-            --card-bg: var(--grist-theme-panel-header-bg, #f7f7f7);
-            --danger: #e74c3c;
-            --warning: #f1c40f;
-            --radius: 6px;
-            --spacing: 16px;
+            --primary: var(--grist-theme-cursor, #2563eb);
+            --primary-light: #eff6ff;
+            --bg: var(--grist-theme-page-bg, #f8fafc);
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-sec: #64748b;
+            --border: #e2e8f0;
+            
+            /* Couleurs Sémantiques */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
+            /* Formes */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
+
+        * { box-sizing: border-box; outline: none; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
-            color: var(--text);
+            color: var(--text-main);
             margin: 0;
-            padding: var(--spacing);
-            font-size: 13px;
-            overflow-x: hidden; /* Evite scroll horizontal global */
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-bottom: 80px; /* Espace pour le FAB mobile */
         }
 
-        /* --- 2. HEADER & NAVIGATION --- */
-        .header {
+        /* --- 2. LAYOUT & NAVIGATION --- */
+        .app-header {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .app-title {
-            font-size: 18px;
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1.app-logo {
+            font-size: 22px;
             font-weight: 800;
-            color: var(--text);
             margin: 0;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
 
-        .nav-tabs {
+        /* Onglets (Pills Design) */
+        .nav-pills {
             display: flex;
-            gap: 4px;
-            background: var(--card-bg);
+            background: #e2e8f0;
             padding: 4px;
-            border-radius: var(--radius);
+            border-radius: var(--radius-lg);
             width: fit-content;
+            gap: 4px;
         }
 
-        .tab-btn {
-            padding: 6px 16px;
+        .nav-item {
+            padding: 8px 20px;
+            border-radius: var(--radius-md);
             border: none;
             background: transparent;
-            border-radius: 4px;
+            color: var(--text-sec);
             font-weight: 600;
-            color: #666;
+            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .tab-btn.active {
-            background: #fff;
-            color: var(--primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .nav-item.active {
+            background: var(--surface);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
         }
 
-        /* --- 3. CONTRÔLES (Filtres & Action) --- */
-        .controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
-
-        .control-item { flex: 1; min-width: 140px; }
-
-        select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .btn-add {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: var(--radius);
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* --- 4. VUES --- */
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* VUE 1: LISTE (CARDS) */
-        .task-list { display: flex; flex-direction: column; gap: 10px; }
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 12px;
-            cursor: pointer;
-            border-left: 4px solid transparent;
-            transition: transform 0.1s;
-        }
-        .card:hover { transform: translateY(-1px); border-color: var(--primary); }
-        
-        .badges-row { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
-        .badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; color: #fff; }
-
-        /* VUE 2: GANTT (CSS PURE) */
-        .gantt-container {
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg);
-            overflow-x: auto;
-        }
-        .gantt-header {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            background: #f0f0f0;
-            font-weight: bold;
-            font-size: 11px;
-            border-bottom: 1px solid var(--border);
-        }
-        .gantt-row {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            position: relative;
-            height: 36px;
-        }
-        .gantt-label {
-            width: 120px;
-            flex-shrink: 0;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-right: 10px;
-            font-size: 12px;
-        }
-        .gantt-track {
-            flex-grow: 1;
-            position: relative;
-            height: 100%;
-            background: rgba(0,0,0,0.02);
-            border-radius: 4px;
-        }
-        .gantt-bar {
-            position: absolute;
-            height: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            border-radius: 8px;
-            min-width: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            transition: width 0.5s ease;
-        }
-        .gantt-tooltip {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 4px;
-            font-size: 10px;
-            border-radius: 4px;
-            display: none;
-            white-space: nowrap;
-            z-index: 10;
-        }
-        .gantt-bar:hover .gantt-tooltip { display: block; }
-
-        /* VUE 3: DASHBOARD */
-        .kpi-grid {
+        /* --- 3. ACTIONS & FILTRES --- */
+        .toolbar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: 1fr 1fr auto;
             gap: 12px;
             margin-bottom: 20px;
         }
-        .kpi-card {
-            background: var(--card-bg);
-            padding: 16px;
-            border-radius: var(--radius);
-            text-align: center;
+
+        .select-modern {
+            width: 100%;
+            padding: 10px 14px;
             border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 13px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
         }
-        .kpi-value { font-size: 24px; font-weight: 800; color: var(--primary); }
-        .kpi-label { font-size: 11px; text-transform: uppercase; color: #666; margin-top: 4px; }
 
-        .chart-fake {
-            height: 12px;
-            background: #eee;
-            border-radius: 6px;
-            overflow: hidden;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* --- 4. VUES (Transitions) --- */
+        .view-container { display: none; animation: fadeIn 0.4s ease; }
+        .view-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* VUE 1: TABLEAU DE BORD (Grid) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
             display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .chart-segment { height: 100%; }
 
+        .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-sec); letter-spacing: 0.5px; }
+        .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
+        .stat-footer { font-size: 12px; color: var(--text-sec); display: flex; align-items: center; gap: 4px; }
+
+        .section-title { font-size: 16px; font-weight: 700; margin: 30px 0 16px 0; color: var(--text-main); }
+        
+        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+        
+        /* Barres de progression custom */
+        .bar-group { margin-bottom: 12px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
+        .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; }
+
+        /* Table minimaliste "À venir" */
+        .mini-table { width: 100%; border-collapse: collapse; }
+        .mini-table td { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .mini-table tr:last-child td { border-bottom: none; }
+
+        /* VUE 2: GANTT */
+        .gantt-wrapper {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            padding: 16px;
+        }
+        .gantt-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--text-sec); font-size: 12px; }
+        .gantt-line { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+        .gantt-text { width: 150px; flex-shrink: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+        .gantt-timeline { flex-grow: 1; position: relative; height: 24px; background: #f8fafc; border-radius: 4px; }
+        .gantt-block { position: absolute; height: 16px; top: 4px; border-radius: 4px; min-width: 8px; cursor: pointer; transition: opacity 0.2s; }
+        .gantt-block:hover { opacity: 0.8; }
+
+        /* VUE 3: LISTE */
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-card {
+            background: var(--surface);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+        .task-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cbd5e1; }
+        
+        .priority-high::before { background: var(--danger); }
+        .priority-medium::before { background: var(--warning); }
+        .priority-low::before { background: var(--success); }
+
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .card-h3 { font-size: 15px; font-weight: 700; margin: 0; }
+        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; color: #fff; }
+        
+        .card-btm { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sec); }
+        .avatar-row { display: flex; align-items: center; gap: 6px; }
+
+        /* --- 5. MODALE (EDITION/CREATION) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
+
+        .modal-box {
+            background: var(--surface);
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+        
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-sec); }
+        
+        .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+        .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
+        
+        /* Helper colors */
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        
+        /* Loading */
+        .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h1 class="app-title">Gantt'FIP</h1>
-            <button class="btn-add" onclick="createTask()">+ Tâche</button>
+    <div class="app-header">
+        <div class="header-top">
+            <h1 class="app-logo">Gantt'FIP</h1>
+            <button class="btn-primary" onclick="openModal()">
+                <span>+ Nouvelle Tâche</span>
+            </button>
         </div>
         
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchView('list')">Liste</button>
-            <button class="tab-btn" onclick="switchView('gantt')">Gantt</button>
-            <button class="tab-btn" onclick="switchView('dashboard')">Tableau de Bord</button>
-        </div>
+        <nav class="nav-pills">
+            <button class="nav-item active" onclick="switchView('dashboard')">Tableau de Bord</button>
+            <button class="nav-item" onclick="switchView('gantt')">Gantt</button>
+            <button class="nav-item" onclick="switchView('list')">Liste</button>
+        </nav>
     </div>
 
-    <div class="controls">
-        <div class="control-item">
-            <select id="filter-team" onchange="applyFilters()">
-                <option value="all">Toutes les Admin.</option>
-            </select>
-        </div>
-        <div class="control-item">
-            <select id="filter-project" onchange="applyFilters()">
-                <option value="all">Tous les Projets</option>
-            </select>
-        </div>
+    <div class="toolbar">
+        <select id="filter-team" class="select-modern" onchange="handleFilters()">
+            <option value="all">Toutes les administrations</option>
+        </select>
+        <select id="filter-project" class="select-modern" onchange="handleFilters()">
+            <option value="all">Tous les projets</option>
+        </select>
     </div>
 
-    <div id="view-list" class="view-section active">
-        <div id="list-container" class="task-list">Chargement...</div>
+    <div id="app-content">
+        <div class="loading">Chargement des données...</div>
     </div>
 
-    <div id="view-gantt" class="view-section">
-        <div class="gantt-header" id="gantt-dates">
-            <span>Début Période</span>
-            <span>Fin Période</span>
-        </div>
-        <div id="gantt-container" class="gantt-container">
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">Nouvelle Tâche</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-        <div style="text-align:center; font-style:italic; color:#999; margin-top:8px;">
-            Seules les tâches avec dates sont affichées.
-        </div>
-    </div>
+            <div class="modal-body">
+                <input type="hidden" id="input-id">
+                
+                <div class="form-group">
+                    <label class="form-label">Titre de la tâche</label>
+                    <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
+                </div>
 
-    <div id="view-dashboard" class="view-section">
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-value" id="kpi-total">0</div>
-                <div class="kpi-label">Tâches</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Administration (Team)</label>
+                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
+                        <datalist id="list-teams"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Projet</label>
+                        <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
+                        <datalist id="list-projects"></datalist>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <input list="list-assignees" id="input-assignee" class="form-input" placeholder="Qui est en charge ?">
+                        <datalist id="list-assignees"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priorité</label>
+                        <select id="input-priority" class="form-input">
+                            <option value="Low">Low (Basse)</option>
+                            <option value="Medium" selected>Medium (Moyenne)</option>
+                            <option value="High">High (Haute)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date de Début</label>
+                        <input type="date" id="input-start" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date de Fin</label>
+                        <input type="date" id="input-end" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Progression (%)</label>
+                    <input type="number" id="input-progress" class="form-input" min="0" max="100" value="0">
+                    <input type="range" id="range-progress" min="0" max="100" value="0" style="margin-top:8px" oninput="document.getElementById('input-progress').value = this.value">
+                </div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="kpi-progress">0%</div>
-                <div class="kpi-label">Avancement Moyen</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="kpi-late" style="color:var(--danger)">0</div>
-                <div class="kpi-label">En Retard</div>
+            <div class="modal-footer">
+                <button class="btn-sec" onclick="closeModal()">Annuler</button>
+                <button class="btn-primary" onclick="saveTask()">Enregistrer</button>
             </div>
         </div>
-        
-        <h4 style="margin:0 0 10px 0">Répartition par Administration</h4>
-        <div id="bar-chart" class="chart-fake" style="margin-bottom: 20px;"></div>
-        <div id="legend-chart" style="display:flex; gap:10px; flex-wrap:wrap; font-size:11px;"></div>
     </div>
 
 <script>
-    // --- CONFIGURATION STRICTE ---
+    /**
+     * ===========================================
+     * GANTT'FIP ULTIMATE - V6 ENGINE
+     * ===========================================
+     */
+
+    // --- 1. CONFIGURATION STRICTE ---
     const MAPPING = [
         { name: 'Title',     title: 'Titre' },
         { name: 'Assignee',  title: 'Responsable' },
-        { name: 'Team',      title: 'Administration' }, // Filtre Admin
-        { name: 'Project',   title: 'Projet' },         // Filtre Projet
+        { name: 'Team',      title: 'Administration' },
+        { name: 'Project',   title: 'Projet' },
         { name: 'StartDate', title: 'Début', type: 'Date' },
         { name: 'EndDate',   title: 'Fin',   type: 'Date' },
         { name: 'Progress',  title: 'Progression', type: 'Numeric' },
-        { name: 'Priority',  title: 'Priorité' }
+        { name: 'Priority',  title: 'Priorité', type: 'Choice' }
     ];
 
+    // STATE MANAGEMENT
     let state = {
-        records: [],
-        filtered: [],
+        allRecords: [],
+        filteredRecords: [],
         filters: { team: 'all', project: 'all' },
-        currentView: 'list'
+        currentView: 'dashboard',
+        uniqueTeams: [],
+        uniqueProjects: [],
+        uniqueAssignees: []
     };
 
-    // --- UTILITAIRES ---
-    function cleanData(tableData) {
-        if (!tableData) return [];
-        if (Array.isArray(tableData)) return tableData;
-        const keys = Object.keys(tableData);
-        if (!keys.length) return [];
-        const count = tableData[keys[0]].length;
-        const res = [];
-        for(let i=0; i<count; i++) {
-            let obj = { id: tableData.id[i] };
-            keys.forEach(k => { if(k !== 'id') obj[k] = tableData[k][i]; });
-            res.push(obj);
-        }
-        return res;
-    }
-
-    function gristDate(val) {
-        if (!val && val !== 0) return null;
-        return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
-    }
-    
-    function dateToGrist(d) {
-        return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
-    }
-
-    function getColor(str) {
-        if (!str) return '#ccc';
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
-    }
-
-    function formatDate(d) {
-        return d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-';
-    }
-
-    // --- NAVIGATION ---
-    function switchView(viewName) {
-        state.currentView = viewName;
-        // Update Tabs
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.tab-btn[onclick="switchView('${viewName}')"]`).classList.add('active');
-        // Update Content
-        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-        document.getElementById(`view-${viewName}`).classList.add('active');
+    // --- 2. UTILITAIRES ---
+    const Utils = {
+        // Date Grist (Sec vs Days)
+        fromGristDate: (val) => {
+            if (!val && val !== 0) return null;
+            return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
+        },
+        toGristDate: (dateObj) => {
+            if (!dateObj) return null;
+            const utc = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            return Math.floor(utc / 86400000);
+        },
+        formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
+        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', // Pour input type="date"
         
-        // Re-render si nécessaire (notamment Gantt qui dépend de la largeur)
-        render(); 
-    }
+        // Couleur HASH consistante
+        stringToColor: (str) => {
+            if (!str) return '#94a3b8';
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const h = Math.abs(hash) % 360;
+            return `hsl(${h}, 70%, 45%)`;
+        },
 
-    // --- LOGIQUE GRIST ---
+        // Nettoyage données Table -> Liste d'objets
+        cleanData: (data) => {
+            if (Array.isArray(data)) return data;
+            if (!data) return [];
+            const cols = Object.keys(data);
+            if (!cols.length) return [];
+            const rows = [];
+            for(let i=0; i<data[cols[0]].length; i++) {
+                let rec = { id: data.id[i] };
+                cols.forEach(c => { if(c!=='id') rec[c] = data[c][i]; });
+                rows.push(rec);
+            }
+            return rows;
+        }
+    };
+
+    // --- 3. INIT & EVENTS GRIST ---
     grist.ready({ columns: MAPPING, requiredAccess: 'full' });
+
     grist.onRecords(data => {
-        state.records = cleanData(data);
-        updateFiltersUI();
-        applyFilters();
+        state.allRecords = Utils.cleanData(data);
+        extractUniqueValues();
+        updateFilterSelects();
+        handleFilters(); // Déclenche le render
     });
 
-    function updateFiltersUI() {
-        // Remplir les Selects seulement si vides (pour ne pas reset sélection)
-        const teamSel = document.getElementById('filter-team');
-        const projSel = document.getElementById('filter-project');
-        
-        const teams = [...new Set(state.records.map(r => r.Team).filter(Boolean))].sort();
-        const projs = [...new Set(state.records.map(r => r.Project).filter(Boolean))].sort();
-
-        const saveT = teamSel.value;
-        const saveP = projSel.value;
-
-        teamSel.innerHTML = `<option value="all">Toutes les Admin.</option>` + 
-            teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        
-        projSel.innerHTML = `<option value="all">Tous les Projets</option>` + 
-            projs.map(p => `<option value="${p}">${p}</option>`).join('');
-
-        if(teams.includes(saveT)) teamSel.value = saveT;
-        if(projs.includes(saveP)) projSel.value = saveP;
+    function extractUniqueValues() {
+        state.uniqueTeams = [...new Set(state.allRecords.map(r => r.Team).filter(Boolean))].sort();
+        state.uniqueProjects = [...new Set(state.allRecords.map(r => r.Project).filter(Boolean))].sort();
+        state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
     }
 
-    function applyFilters() {
+    // --- 4. LOGIQUE FILTRES ---
+    function updateFilterSelects() {
+        // Conserve sélection user
+        const tVal = document.getElementById('filter-team').value;
+        const pVal = document.getElementById('filter-project').value;
+
+        const tSelect = document.getElementById('filter-team');
+        const pSelect = document.getElementById('filter-project');
+
+        tSelect.innerHTML = `<option value="all">Toutes les administrations</option>` + 
+            state.uniqueTeams.map(t => `<option value="${t}">${t}</option>`).join('');
+        
+        pSelect.innerHTML = `<option value="all">Tous les projets</option>` + 
+            state.uniqueProjects.map(p => `<option value="${p}">${p}</option>`).join('');
+
+        if(state.uniqueTeams.includes(tVal)) tSelect.value = tVal;
+        if(state.uniqueProjects.includes(pVal)) pSelect.value = pVal;
+    }
+
+    function handleFilters() {
         state.filters.team = document.getElementById('filter-team').value;
         state.filters.project = document.getElementById('filter-project').value;
 
-        state.filtered = state.records.filter(r => {
-            const okTeam = state.filters.team === 'all' || r.Team === state.filters.team;
-            const okProj = state.filters.project === 'all' || r.Project === state.filters.project;
-            return okTeam && okProj;
+        state.filteredRecords = state.allRecords.filter(r => {
+            const teamOk = state.filters.team === 'all' || r.Team === state.filters.team;
+            const projOk = state.filters.project === 'all' || r.Project === state.filters.project;
+            return teamOk && projOk;
         });
 
-        render();
+        renderCurrentView();
     }
 
-    async function createTask() {
-        const fields = { 
-            Title: 'Nouvelle Tâche', 
-            StartDate: dateToGrist(new Date()),
-            Progress: 0 
-        };
-        if(state.filters.team !== 'all') fields.Team = state.filters.team;
-        if(state.filters.project !== 'all') fields.Project = state.filters.project;
+    function switchView(view) {
+        state.currentView = view;
+        // Update tabs UI
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.nav-item[onclick="switchView('${view}')"]`).classList.add('active');
+        renderCurrentView();
+    }
+
+    function renderCurrentView() {
+        const container = document.getElementById('app-content');
+        container.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'view-container active';
+
+        if(state.currentView === 'dashboard') renderDashboard(wrapper);
+        else if(state.currentView === 'gantt') renderGantt(wrapper);
+        else renderList(wrapper);
+
+        container.appendChild(wrapper);
+    }
+
+    // --- 5. MOTEURS DE RENDU ---
+
+    /** VUE 1 : DASHBOARD **/
+    function renderDashboard(container) {
+        const data = state.filteredRecords;
+        const total = data.length;
+        const now = new Date();
+
+        // Stats
+        const done = data.filter(r => (r.Progress||0) == 100).length;
+        const late = data.filter(r => {
+            const end = Utils.fromGristDate(r.EndDate);
+            return end && end < now && (r.Progress||0) < 100;
+        }).length;
+        const inProgress = data.filter(r => (r.Progress||0) > 0 && (r.Progress||0) < 100).length;
         
-        try { await grist.selectedTable.create({ fields }); }
-        catch(e) { alert("Erreur Création. Vérifiez IDs colonnes (Team, Project, EndDate)"); }
+        const donePct = total ? Math.round((done/total)*100) : 0;
+
+        // HTML
+        container.innerHTML = `
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">Total Tâches</div>
+                        <div class="stat-value" style="color:var(--primary)">${total}</div>
+                    </div>
+                    <div class="stat-footer">Toutes tâches confondues</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">Terminées</div>
+                        <div class="stat-value text-success">${done}</div>
+                    </div>
+                    <div class="stat-footer">${donePct}% du total</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">En Retard</div>
+                        <div class="stat-value text-danger">${late}</div>
+                    </div>
+                    <div class="stat-footer">À traiter en urgence</div>
+                </div>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-title">En Cours</div>
+                        <div class="stat-value" style="color:var(--warning)">${inProgress}</div>
+                    </div>
+                    <div class="stat-footer">Actives</div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Priorité</h4>
+                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Medium: 'var(--warning)', Low: 'var(--success)'})}
+                </div>
+
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Administration</h4>
+                    ${renderBarChart(data, 'Team', null)}
+                </div>
+                
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Prochaines Échéances</h4>
+                    <table class="mini-table">
+                        ${data.filter(r => r.EndDate && (r.Progress||0) < 100)
+                              .sort((a,b) => Utils.fromGristDate(a.EndDate) - Utils.fromGristDate(b.EndDate))
+                              .slice(0,5)
+                              .map(r => `
+                                <tr>
+                                    <td><strong>${r.Title}</strong></td>
+                                    <td style="text-align:right">${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</td>
+                                </tr>
+                              `).join('') || '<tr><td>Aucune tâche à venir</td></tr>'}
+                    </table>
+                </div>
+            </div>
+        `;
     }
 
-    // --- RENDU GLOBAL ---
-    function render() {
-        if(state.currentView === 'list') renderList();
-        else if(state.currentView === 'gantt') renderGantt();
-        else renderDashboard();
-    }
-
-    // 1. RENDER LISTE
-    function renderList() {
-        const div = document.getElementById('list-container');
-        div.innerHTML = '';
-        if(!state.filtered.length) { div.innerHTML = '<div style="text-align:center;color:#999">Aucune tâche.</div>'; return; }
-
-        state.filtered.forEach(row => {
-            const el = document.createElement('div');
-            el.className = 'card';
-            el.onclick = () => grist.setSelectedRows([row.id]);
-            
-            const badges = [];
-            if(row.Team) badges.push({txt: row.Team, bg: getColor(row.Team)});
-            if(row.Project) badges.push({txt: row.Project, bg: getColor(row.Project)});
-            
-            const progress = row.Progress || 0;
-            const endDate = gristDate(row.EndDate);
-            const isLate = endDate && endDate < new Date() && progress < 100;
-
-            el.innerHTML = `
-                <div style="display:flex; justify-content:space-between">
-                    <span style="font-weight:700">${row.Title || 'Sans Titre'}</span>
-                    ${isLate ? '<span style="color:red; font-weight:bold">!</span>' : ''}
-                </div>
-                <div class="badges-row">
-                    ${badges.map(b => `<span class="badge" style="background:${b.bg}">${b.txt}</span>`).join('')}
-                </div>
-                <div style="font-size:11px; color:#666; display:flex; justify-content:space-between; margin-top:8px">
-                    <span>${row.Assignee || 'Non assigné'}</span>
-                    <span>${formatDate(endDate)}</span>
-                </div>
-                <div style="height:4px; background:#eee; border-radius:2px; margin-top:6px; overflow:hidden">
-                    <div style="height:100%; width:${progress}%; background:${isLate ? 'red' : 'var(--primary)'}"></div>
-                </div>
-            `;
-            div.appendChild(el);
+    function renderBarChart(data, key, colorMap) {
+        const counts = {};
+        data.forEach(r => { 
+            const k = r[key] || 'Non défini'; 
+            counts[k] = (counts[k] || 0) + 1; 
         });
-    }
-
-    // 2. RENDER GANTT (ALGORITHME)
-    function renderGantt() {
-        const div = document.getElementById('gantt-container');
-        div.innerHTML = '';
+        const max = Math.max(...Object.values(counts), 1);
         
-        // Filtrer tâches avec dates valides
-        const tasks = state.filtered.filter(r => r.StartDate && r.EndDate).map(r => ({
-            ...r,
-            start: gristDate(r.StartDate),
-            end: gristDate(r.EndDate)
-        })).sort((a,b) => a.start - b.start);
-
-        if(!tasks.length) { div.innerHTML = '<div style="padding:20px; text-align:center">Pas de dates définies pour le Gantt.</div>'; return; }
-
-        // Trouver bornes temporelles globales
-        let minT = new Date(Math.min(...tasks.map(t => t.start))).getTime();
-        let maxT = new Date(Math.max(...tasks.map(t => t.end))).getTime();
-        
-        // Ajouter Marge (1 jour avant/après)
-        const dayMs = 86400000;
-        minT -= dayMs;
-        maxT += dayMs;
-        const totalDuration = maxT - minT;
-
-        // Mise à jour header dates
-        const header = document.getElementById('gantt-dates');
-        header.innerHTML = `<span>${formatDate(new Date(minT))}</span><span>${formatDate(new Date(maxT))}</span>`;
-
-        tasks.forEach(task => {
-            const row = document.createElement('div');
-            row.className = 'gantt-row';
-            
-            // Calcul positions %
-            const startPct = ((task.start.getTime() - minT) / totalDuration) * 100;
-            const widthPct = Math.max(((task.end.getTime() - task.start.getTime()) / totalDuration) * 100, 1); // Min 1% width
-            
-            const color = task.Project ? getColor(task.Project) : '#999';
-
-            row.innerHTML = `
-                <div class="gantt-label" title="${task.Title}">${task.Title}</div>
-                <div class="gantt-track">
-                    <div class="gantt-bar" style="left:${startPct}%; width:${widthPct}%; background:${color}">
-                        <div class="gantt-tooltip">
-                            ${formatDate(task.start)} au ${formatDate(task.end)} (${task.Progress || 0}%)
-                        </div>
+        return Object.keys(counts).map(k => {
+            const count = counts[k];
+            const pct = (count / max) * 100;
+            const color = colorMap ? (colorMap[k] || '#ccc') : Utils.stringToColor(k);
+            return `
+                <div class="bar-group">
+                    <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width:${pct}%; background:${color}"></div>
                     </div>
                 </div>
             `;
-            // Clic sur ligne = sélection Grist
-            row.onclick = () => grist.setSelectedRows([task.id]);
-            div.appendChild(row);
-        });
+        }).join('');
     }
 
-    // 3. RENDER DASHBOARD (KPIs)
-    function renderDashboard() {
-        const data = state.filtered;
-        const total = data.length;
-        
-        // Calculs
-        const avgProgress = total ? Math.round(data.reduce((acc, r) => acc + (r.Progress||0), 0) / total) : 0;
-        const now = new Date();
-        const lateCount = data.filter(r => {
-            const end = gristDate(r.EndDate);
-            return end && end < now && (r.Progress||0) < 100;
-        }).length;
+    /** VUE 2 : GANTT **/
+    function renderGantt(container) {
+        const tasks = state.filteredRecords
+            .filter(r => r.StartDate && r.EndDate)
+            .map(r => ({...r, start: Utils.fromGristDate(r.StartDate), end: Utils.fromGristDate(r.EndDate)}))
+            .sort((a,b) => a.start - b.start);
 
-        // Injection DOM
-        document.getElementById('kpi-total').innerText = total;
-        document.getElementById('kpi-progress').innerText = avgProgress + '%';
-        document.getElementById('kpi-late').innerText = lateCount;
+        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche avec dates.</div>'; return; }
 
-        // Mini Chart par Team
-        const teamCounts = {};
-        data.forEach(r => { 
-            const t = r.Team || 'Autre'; 
-            teamCounts[t] = (teamCounts[t] || 0) + 1; 
-        });
-        
-        const chartDiv = document.getElementById('bar-chart');
-        const legendDiv = document.getElementById('legend-chart');
-        chartDiv.innerHTML = ''; 
-        legendDiv.innerHTML = '';
+        let min = new Date(Math.min(...tasks.map(t => t.start))).getTime();
+        let max = new Date(Math.max(...tasks.map(t => t.end))).getTime();
+        const padding = 86400000 * 2; // +2 jours marge
+        min -= padding; max += padding;
+        const span = max - min;
 
-        Object.keys(teamCounts).forEach(team => {
-            const count = teamCounts[team];
-            const pct = (count / total) * 100;
-            const color = getColor(team);
-            
-            // Segment barre
-            const seg = document.createElement('div');
-            seg.className = 'chart-segment';
-            seg.style.width = pct + '%';
-            seg.style.background = color;
-            chartDiv.appendChild(seg);
-
-            // Légende
-            legendDiv.innerHTML += `
-                <div style="display:flex; align-items:center; gap:4px;">
-                    <span style="width:8px; height:8px; background:${color}; border-radius:50%"></span>
-                    <span>${team} (${count})</span>
+        let html = `
+            <div class="gantt-wrapper">
+                <div class="gantt-header">
+                    <span>Tâche</span>
+                    <span style="text-align:right">Période: ${Utils.formatDate(new Date(min))} - ${Utils.formatDate(new Date(max))}</span>
                 </div>`;
+        
+        tasks.forEach(t => {
+            const left = ((t.start.getTime() - min) / span) * 100;
+            const width = Math.max(((t.end.getTime() - t.start.getTime()) / span) * 100, 1);
+            const color = t.Project ? Utils.stringToColor(t.Project) : '#cbd5e1';
+            
+            html += `
+                <div class="gantt-line" onclick="openModal(${t.id})">
+                    <div class="gantt-text" title="${t.Title}">${t.Title}</div>
+                    <div class="gantt-timeline">
+                        <div class="gantt-block" style="left:${left}%; width:${width}%; background:${color}" title="${t.Title} (${t.Progress}%)"></div>
+                    </div>
+                </div>
+            `;
         });
+        
+        html += `</div>`;
+        container.innerHTML = html;
     }
+
+    /** VUE 3 : LISTE **/
+    function renderList(container) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'task-list';
+        
+        if(!state.filteredRecords.length) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche trouvée.</div>';
+            return;
+        }
+
+        state.filteredRecords.forEach(r => {
+            const card = document.createElement('div');
+            // Classe de priorité pour la couleur bordure gauche
+            const prioClass = r.Priority ? `priority-${r.Priority.toLowerCase()}` : '';
+            card.className = `task-card ${prioClass}`;
+            
+            // Clic carte -> Edit Modal
+            card.onclick = () => openModal(r.id);
+
+            const badges = [];
+            if(r.Team) badges.push({t: r.Team, c: Utils.stringToColor(r.Team)});
+            if(r.Project) badges.push({t: r.Project, c: Utils.stringToColor(r.Project)});
+
+            card.innerHTML = `
+                <div class="card-top">
+                    <h3 class="card-h3">${r.Title || 'Sans Titre'}</h3>
+                    ${r.Priority ? `<span style="font-size:10px; font-weight:700; color:#666">${r.Priority}</span>` : ''}
+                </div>
+                <div class="card-tags">
+                    ${badges.map(b => `<span class="tag" style="background:${b.c}">${b.t}</span>`).join('')}
+                </div>
+                <div class="card-btm">
+                    <div class="avatar-row">
+                        <span>👤 ${r.Assignee || 'Non assigné'}</span>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center">
+                        <span>📅 ${Utils.formatDate(Utils.fromGristDate(r.EndDate))}</span>
+                        ${r.Progress !== undefined ? `<strong>${r.Progress}%</strong>` : ''}
+                    </div>
+                </div>
+            `;
+            listDiv.appendChild(card);
+        });
+        container.appendChild(listDiv);
+    }
+
+    // --- 6. GESTION MODALE (CRUD COMPLET) ---
+    
+    // Remplit les datalists (Autocomplétion créative)
+    function populateDatalists() {
+        const fill = (id, list) => {
+            document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join('');
+        };
+        fill('list-teams', state.uniqueTeams);
+        fill('list-projects', state.uniqueProjects);
+        fill('list-assignees', state.uniqueAssignees);
+    }
+
+    function openModal(recordId = null) {
+        populateDatalists(); // Rafraîchir les listes
+        
+        const modal = document.getElementById('modal');
+        const title = document.getElementById('modal-title');
+        
+        // Reset Form
+        document.getElementById('input-id').value = '';
+        document.getElementById('input-title').value = '';
+        document.getElementById('input-team').value = '';
+        document.getElementById('input-project').value = '';
+        document.getElementById('input-assignee').value = '';
+        document.getElementById('input-priority').value = 'Medium';
+        document.getElementById('input-start').value = '';
+        document.getElementById('input-end').value = '';
+        document.getElementById('input-progress').value = 0;
+        document.getElementById('range-progress').value = 0;
+
+        if (recordId) {
+            // MODE EDITION
+            const r = state.allRecords.find(x => x.id === recordId);
+            if (r) {
+                title.innerText = "Modifier la Tâche";
+                document.getElementById('input-id').value = r.id;
+                document.getElementById('input-title').value = r.Title || '';
+                document.getElementById('input-team').value = r.Team || '';
+                document.getElementById('input-project').value = r.Project || '';
+                document.getElementById('input-assignee').value = r.Assignee || '';
+                document.getElementById('input-priority').value = r.Priority || 'Medium';
+                document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
+                document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
+                const prog = r.Progress || 0;
+                document.getElementById('input-progress').value = prog;
+                document.getElementById('range-progress').value = prog;
+                
+                // Sélectionner aussi dans Grist pour le focus
+                grist.setSelectedRows([r.id]);
+            }
+        } else {
+            // MODE CREATION
+            title.innerText = "Nouvelle Tâche";
+            // Pré-remplir avec les filtres actuels s'ils sont actifs
+            if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
+            if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
+            
+            // Dates par défaut (Aujourd'hui)
+            const today = Utils.inputDate(new Date());
+            document.getElementById('input-start').value = today;
+            document.getElementById('input-end').value = today;
+        }
+
+        modal.classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('open');
+    }
+
+    async function saveTask() {
+        const id = document.getElementById('input-id').value; // String, vide si création
+        
+        // Récupération des valeurs
+        // Note: Pour les champs Choice (Team, Project), Grist acceptera la nouvelle valeur texte
+        // si la colonne est configurée pour, ou si c'est une colonne Texte simple.
+        const fields = {
+            Title: document.getElementById('input-title').value || 'Nouvelle Tâche',
+            Team: document.getElementById('input-team').value,
+            Project: document.getElementById('input-project').value,
+            Assignee: document.getElementById('input-assignee').value,
+            Priority: document.getElementById('input-priority').value,
+            StartDate: Utils.toGristDate(new Date(document.getElementById('input-start').value)),
+            EndDate: Utils.toGristDate(new Date(document.getElementById('input-end').value)),
+            Progress: parseInt(document.getElementById('input-progress').value) || 0
+        };
+
+        try {
+            if (id) {
+                // UPDATE
+                await grist.selectedTable.update({ id: parseInt(id), fields });
+            } else {
+                // CREATE
+                await grist.selectedTable.create({ fields });
+            }
+            closeModal();
+        } catch (e) {
+            console.error(e);
+            alert("Erreur lors de la sauvegarde. Vérifiez les droits d'accès ou les noms de colonnes.");
+        }
+    }
+
+    // Synchro Range/Number pour le slider de progression
+    document.getElementById('input-progress').addEventListener('input', function() {
+        document.getElementById('range-progress').value = this.value;
+    });
 </script>
 </body>
 </html>
