@@ -3,117 +3,551 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gantt'FIP Ultimate v11 (Fix Save & Dropdowns)</title>
+    <title>Gantt'FIP Ultimate v12 (Full Expanded)</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <style>
-        /* --- 1. DESIGN SYSTEM (STRICTEMENT IDENTIQUE) --- */
+        /* --- 1. DESIGN SYSTEM --- */
         :root {
             --primary: var(--grist-theme-cursor, #2563eb);
+            --primary-light: #eff6ff;
             --bg: var(--grist-theme-page-bg, #f8fafc);
             --surface: #ffffff;
             --text-main: #1e293b;
             --text-sec: #64748b;
             --border: #e2e8f0;
             
+            /* Couleurs Sémantiques */
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
             --info: #3b82f6;
             --black: #000000;
 
+            /* Formes */
+            --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
 
-        * { box-sizing: border-box; outline: none; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 20px; padding-bottom: 80px; user-select: none; font-size: 14px; }
+        * { 
+            box-sizing: border-box; 
+            outline: none; 
+        }
 
-        /* HEADER & NAV */
-        .app-header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-        .header-top { display: flex; justify-content: space-between; align-items: center; }
-        h1.app-logo { font-size: 22px; font-weight: 800; margin: 0; background: linear-gradient(135deg, var(--primary), #4f46e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-bottom: 80px;
+            user-select: none;
+        }
+
+        /* --- 2. LAYOUT & NAVIGATION --- */
+        .app-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1.app-logo {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-pills {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: var(--radius-lg);
+            width: fit-content;
+            gap: 4px;
+        }
+
+        .nav-item {
+            padding: 8px 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: transparent;
+            color: var(--text-sec);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item.active {
+            background: var(--surface);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* --- 3. ACTIONS & FILTRES --- */
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+            position: relative; 
+            z-index: 50;
+        }
+
+        .select-modern {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 13px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .btn-primary:active { 
+            transform: scale(0.98); 
+        }
+
+        /* FAB PRINT (Flottant) */
+        .fab-print {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: transform 0.2s;
+        }
+
+        .fab-print:hover {
+            transform: scale(1.1);
+        }
+
+        /* --- 4. VUES --- */
+        .view-container { 
+            display: none; 
+        }
         
-        .nav-pills { display: flex; background: #e2e8f0; padding: 4px; border-radius: var(--radius-lg); width: fit-content; gap: 4px; }
-        .nav-item { padding: 8px 20px; border-radius: var(--radius-md); border: none; background: transparent; color: var(--text-sec); font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .nav-item.active { background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm); }
-
-        /* TOOLBAR & BUTTONS */
-        .toolbar { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; margin-bottom: 20px; align-items: center; position: relative; z-index: 50; }
-        .select-modern { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary:active { transform: scale(0.98); }
+        .view-container.active { 
+            display: block; 
+            animation: fadeIn 0.4s ease; 
+        }
         
-        .fab-print { position: fixed; bottom: 30px; right: 30px; width: 56px; height: 56px; background: var(--text-main); color: white; border-radius: 50%; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 999; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
 
-        /* VUES */
-        .view-container { display: none; }
-        .view-container.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* VUE 1: DASHBOARD */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-        /* DASHBOARD */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-card { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
-        .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-sec); }
-        .stat-value { font-size: 32px; font-weight: 800; margin: 8px 0; }
-        .stat-footer { font-size: 12px; color: var(--text-sec); }
-        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .chart-box { background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
-        .bar-group { margin-bottom: 10px; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .bar-bg { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 4px; }
+        .stat-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-        /* GANTT */
-        .gantt-wrapper { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-x: auto; position: relative; min-height: 400px; }
-        .gantt-header-row { display: flex; border-bottom: 1px solid var(--border); height: 45px; position: sticky; top: 0; background: var(--surface); z-index: 20; }
-        .gantt-sidebar-title { width: 200px; flex-shrink: 0; padding: 10px; font-weight: bold; border-right: 1px solid var(--border); background: #f8fafc; font-size: 12px; display: flex; align-items: center; }
-        .gantt-timeline-header { flex-grow: 1; position: relative; }
-        .gantt-body { position: relative; }
+        .stat-title { 
+            font-size: 12px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            color: var(--text-sec); 
+            letter-spacing: 0.5px; 
+        }
         
-        .gantt-group-header { background: #f1f5f9; padding: 8px 12px; font-weight: 700; font-size: 12px; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); color: var(--text-main); position: sticky; left: 0; width: 100%; z-index: 15; }
-        .gantt-row { display: flex; height: 36px; border-bottom: 1px solid #f1f5f9; align-items: center; position: relative; }
-        .gantt-row-label { width: 200px; flex-shrink: 0; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; border-right: 1px solid var(--border); background: var(--surface); position: sticky; left: 0; z-index: 10; height: 100%; display: flex; align-items: center; cursor: pointer; }
-        .gantt-row-track { flex-grow: 1; position: relative; height: 100%; }
+        .stat-value { 
+            font-size: 32px; 
+            font-weight: 800; 
+            margin: 8px 0; 
+            color: var(--text-main); 
+        }
         
-        .gantt-block { position: absolute; top: 8px; height: 20px; border-radius: 4px; min-width: 8px; cursor: grab; z-index: 5; font-size: 10px; color: white; display: flex; align-items: center; padding-left: 5px; white-space: nowrap; overflow: hidden; }
-        .gantt-block:active { cursor: grabbing; z-index: 20; }
+        .stat-footer { 
+            font-size: 12px; 
+            color: var(--text-sec); 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+        }
 
-        /* CORRECTIF : TRAIT ROUGE Z-INDEX */
-        .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: red; z-index: 40; pointer-events: none; }
-        .today-label { position: absolute; top: -20px; left: -20px; background: red; color: white; padding: 2px 4px; font-size: 10px; border-radius: 3px; white-space: nowrap; }
+        .charts-row { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        .chart-box { 
+            background: var(--surface); 
+            padding: 20px; 
+            border-radius: var(--radius-lg); 
+            border: 1px solid var(--border); 
+        }
+        
+        .bar-group { 
+            margin-bottom: 12px; 
+        }
+        
+        .bar-label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 12px; 
+            margin-bottom: 4px; 
+            font-weight: 500; 
+        }
+        
+        .bar-bg { 
+            height: 8px; 
+            background: #f1f5f9; 
+            border-radius: 4px; 
+            overflow: hidden; 
+        }
+        
+        .bar-fill { 
+            height: 100%; 
+            border-radius: 4px; 
+        }
 
-        /* LISTE */
-        .task-list { display: flex; flex-direction: column; gap: 12px; }
-        .task-card { background: var(--surface); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); border-left-width: 4px; cursor: pointer; transition: transform 0.1s; }
-        .task-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        /* VUE 2: GANTT */
+        .gantt-wrapper {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            padding: 0;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .gantt-header-row {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            height: 45px;
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            z-index: 20;
+        }
+
+        .gantt-sidebar-title {
+            width: 200px;
+            flex-shrink: 0;
+            padding: 10px;
+            font-weight: bold;
+            border-right: 1px solid var(--border);
+            background: #f8fafc;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .gantt-timeline-header {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .gantt-body {
+            position: relative;
+        }
+        
+        .gantt-group-header {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
+            color: var(--text-main);
+            position: sticky;
+            left: 0;
+            width: 100%;
+            z-index: 15;
+        }
+
+        .gantt-row {
+            display: flex;
+            height: 36px;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+            position: relative;
+        }
+
+        .gantt-row-label {
+            width: 200px;
+            flex-shrink: 0;
+            padding: 0 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 12px;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .gantt-row-track {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        .gantt-block {
+            position: absolute;
+            top: 8px;
+            height: 20px;
+            border-radius: 4px;
+            min-width: 8px;
+            cursor: grab;
+            transition: box-shadow 0.2s, opacity 0.2s;
+            z-index: 5;
+            font-size: 10px;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding-left: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .gantt-block:active {
+            cursor: grabbing;
+            z-index: 20;
+        }
+        
+        /* Ligne rouge du jour */
+        .today-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: red;
+            z-index: 8;
+            pointer-events: none;
+        }
+        
+        .today-label {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            background: red;
+            color: white;
+            padding: 2px 4px;
+            font-size: 10px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        /* VUE 3: LISTE */
+        .task-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+        
+        .task-card {
+            background: var(--surface);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            border-left-width: 4px;
+        }
+        
+        .task-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: var(--shadow-md); 
+            border-color: var(--primary); 
+        }
+        
         .priority-high { border-left-color: var(--danger); }
         .priority-normal { border-left-color: var(--warning); }
         .priority-low { border-left-color: var(--success); }
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .card-btm { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sec); }
-        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; color: white; font-weight: 600; margin-right: 5px; }
 
-        /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 999; display: none; justify-content: center; align-items: center; padding: 20px; }
-        .modal-overlay.open { display: flex; }
-        .modal-box { background: var(--surface); width: 100%; max-width: 500px; border-radius: var(--radius-lg); box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; }
-        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y: auto; }
-        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-        
-        .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text-sec); }
-        .form-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); }
-        
-        .input-row-plus { display: flex; gap: 8px; }
-        .btn-plus { width: 38px; border: 1px solid var(--border); background: #f1f5f9; border-radius: var(--radius-md); cursor: pointer; color: var(--primary); font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .btn-sec { background: white; border: 1px solid var(--border); padding: 10px 20px; border-radius: var(--radius-md); cursor: pointer; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .card-h3 { font-size: 15px; font-weight: 700; margin: 0; }
+        .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; color: #fff; }
+        .card-btm { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sec); }
+        .avatar-row { display: flex; align-items: center; gap: 6px; }
 
+        /* --- 5. MODALE --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal-overlay.open { 
+            display: flex; 
+            animation: fadeIn 0.2s; 
+        }
+
+        .modal-box {
+            background: var(--surface);
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+        
+        .modal-header { 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
+        
+        .close-btn { 
+            background: none; 
+            border: none; 
+            font-size: 24px; 
+            cursor: pointer; 
+            color: var(--text-sec); 
+        }
+        
+        .modal-body { 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+        }
+        
+        /* Input avec bouton + */
+        .input-row-plus {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-plus {
+            width: 36px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            background: #f1f5f9;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            color: var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-plus:hover { background: #e2e8f0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 14px; width: 100%; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .modal-footer { 
+            padding: 20px; 
+            border-top: 1px solid var(--border); 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px; 
+        }
+        
+        .btn-sec { 
+            background: transparent; 
+            border: 1px solid var(--border); 
+            color: var(--text-main); 
+            padding: 10px 20px; 
+            border-radius: var(--radius-md); 
+            font-weight: 600; 
+            cursor: pointer; 
+        }
+        
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .loading { text-align: center; color: var(--text-sec); margin-top: 50px; }
+
+        /* PRINT */
         @media print {
-            .app-header, .toolbar, .fab-print, .modal-overlay { display: none !important; }
-            .view-container { display: block !important; }
-            .gantt-wrapper { overflow: visible; border: none; }
+            body { background: white; padding: 0; margin: 0; overflow: visible; }
+            .app-header, .toolbar, .fab-print, .close-btn, .modal-overlay, .btn-primary, .btn-sec, .btn-plus { display: none !important; }
+            .view-container { display: block !important; width: 100% !important; animation: none; }
+            .gantt-wrapper, .dashboard-grid, .task-list { border: none; box-shadow: none; width: 100%; overflow: visible; }
+            .gantt-wrapper { overflow-x: hidden; }
             @page { size: landscape; margin: 1cm; }
         }
     </style>
@@ -123,8 +557,11 @@
     <div class="app-header">
         <div class="header-top">
             <h1 class="app-logo">Gantt'FIP</h1>
-            <button type="button" class="btn-primary" onclick="window.openModal()">+ Nouvelle Tâche</button>
+            <button type="button" class="btn-primary" onclick="window.openModal()">
+                <span>+ Nouvelle Tâche</span>
+            </button>
         </div>
+        
         <nav class="nav-pills">
             <button type="button" class="nav-item active" onclick="window.switchView('dashboard')">Tableau de Bord</button>
             <button type="button" class="nav-item" onclick="window.switchView('gantt')">Gantt</button>
@@ -133,9 +570,15 @@
     </div>
 
     <div id="main-toolbar" class="toolbar" style="display:none">
-        <select id="filter-project" class="select-modern" onchange="window.handleFilters()"><option value="all">Tous les projets</option></select>
-        <select id="filter-team" class="select-modern" onchange="window.handleFilters()"><option value="all">Toutes les administrations</option></select>
-        <select id="filter-assignee" class="select-modern" onchange="window.handleFilters()"><option value="all">Tous les responsables</option></select>
+        <select id="filter-project" class="select-modern" onchange="window.handleFilters()">
+            <option value="all">Tous les projets</option>
+        </select>
+        <select id="filter-team" class="select-modern" onchange="window.handleFilters()">
+            <option value="all">Toutes les administrations</option>
+        </select>
+        <select id="filter-assignee" class="select-modern" onchange="window.handleFilters()">
+            <option value="all">Tous les responsables</option>
+        </select>
         <select id="gantt-scale" class="select-modern" style="display:none" onchange="window.changeGanttScale(this.value)">
             <option value="day">Vue: Jour</option>
             <option value="week">Vue: Semaine</option>
@@ -143,39 +586,39 @@
         </select>
     </div>
 
-    <button type="button" class="fab-print" onclick="window.print()">🖨️</button>
+    <button type="button" class="fab-print" onclick="window.print()" title="Imprimer">🖨️</button>
 
     <div id="app-content">
-        <div style="text-align:center; margin-top:50px; color:#999">Chargement des données...</div>
+        <div class="loading">Chargement des données...</div>
     </div>
 
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 style="margin:0">Nouvelle Tâche</h3>
-                <button type="button" class="close-btn" style="border:none;background:none;font-size:20px;cursor:pointer" onclick="window.closeModal()">×</button>
+                <h3 id="modal-title" class="modal-title">Nouvelle Tâche</h3>
+                <button type="button" class="close-btn" onclick="window.closeModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="input-id">
                 
                 <div class="form-group">
-                    <label class="form-label">Titre</label>
-                    <input type="text" id="input-title" class="form-input">
+                    <label class="form-label">Titre de la tâche</label>
+                    <input type="text" id="input-title" class="form-input" placeholder="Ex: Rédiger le rapport...">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Projet</label>
                     <div class="input-row-plus">
-                        <input list="list-projects" id="input-project" class="form-input" placeholder="Sélectionner ou écrire...">
+                        <input list="list-projects" id="input-project" class="form-input" placeholder="Choisir ou créer...">
                         <button type="button" class="btn-plus" onclick="window.addItem('input-project')">+</button>
                     </div>
                     <datalist id="list-projects"></datalist>
                 </div>
-
+                
                 <div class="form-group">
-                    <label class="form-label">Administration</label>
+                    <label class="form-label">Administration (Team)</label>
                     <div class="input-row-plus">
-                        <input list="list-teams" id="input-team" class="form-input" placeholder="Sélectionner ou écrire...">
+                        <input list="list-teams" id="input-team" class="form-input" placeholder="Choisir ou créer...">
                         <button type="button" class="btn-plus" onclick="window.addItem('input-team')">+</button>
                     </div>
                     <datalist id="list-teams"></datalist>
@@ -190,29 +633,32 @@
                     <datalist id="list-assignees"></datalist>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Priorité</label>
-                    <select id="input-priority" class="form-input">
-                        <option value="Normal">Normale</option>
-                        <option value="High">Haute</option>
-                        <option value="Low">Basse</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Priorité</label>
+                        <select id="input-priority" class="form-input">
+                            <option value="Low">Low (Basse)</option>
+                            <option value="Normal">Normal (Normale)</option>
+                            <option value="High">High (Haute)</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div style="display:flex; gap:10px">
-                    <div class="form-group" style="flex:1">
-                        <label class="form-label">Début</label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date de Début</label>
                         <input type="date" id="input-start" class="form-input">
                     </div>
-                    <div class="form-group" style="flex:1">
-                        <label class="form-label">Fin</label>
+                    <div class="form-group">
+                        <label class="form-label">Date de Fin</label>
                         <input type="date" id="input-end" class="form-input">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Progression (%)</label>
-                    <input type="range" id="input-progress" min="0" max="100" value="0" style="width:100%">
+                    <input type="number" id="input-progress" class="form-input" min="0" max="100" value="0">
+                    <input type="range" id="range-progress" min="0" max="100" value="0" style="margin-top:8px" oninput="document.getElementById('input-progress').value = this.value">
                 </div>
             </div>
             <div class="modal-footer">
@@ -223,7 +669,11 @@
     </div>
 
 <script>
-    /** GANTT'FIP ULTIMATE V11 **/
+    /**
+     * ===========================================
+     * GANTT'FIP ULTIMATE - V12.0 (FIXED & EXPANDED)
+     * ===========================================
+     */
 
     const MAPPING = [
         { name: 'Title',     title: 'Titre' },
@@ -237,26 +687,53 @@
     ];
 
     let state = {
-        allRecords: [], filteredRecords: [],
+        allRecords: [],
+        filteredRecords: [],
         filters: { team: 'all', project: 'all', assignee: 'all' },
-        currentView: 'dashboard', ganttScale: 'day',
-        uniqueTeams: [], uniqueProjects: [], uniqueAssignees: []
+        currentView: 'dashboard',
+        ganttScale: 'day',
+        uniqueTeams: [],
+        uniqueProjects: [],
+        uniqueAssignees: []
     };
 
-    let dragState = { isDragging: false, element: null, recordId: null, startX: 0, initialLeft: 0, pxPerDay: 0, minTime: 0, hasMoved: false };
+    let dragState = {
+        isDragging: false, 
+        element: null, 
+        recordId: null, 
+        startX: 0, 
+        initialLeft: 0, 
+        pxPerDay: 0, 
+        minTime: 0, 
+        hasMoved: false
+    };
 
     // --- UTILS ---
     const Utils = {
-        fromGristDate: (val) => (!val && val !== 0) ? null : (val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000)),
-        toGristDate: (d) => d ? Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000) : null,
-        formatDate: (d) => d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-',
-        inputDate: (d) => d ? d.toISOString().split('T')[0] : '', 
+        fromGristDate: (val) => {
+            if (!val && val !== 0) return null;
+            return val > 100000 ? new Date(val * 1000) : new Date(val * 24 * 60 * 60 * 1000);
+        },
+        toGristDate: (d) => {
+            if (!d) return null;
+            const utc = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+            return Math.floor(utc / 86400000);
+        },
+        formatDate: (d) => {
+            return d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-';
+        },
+        inputDate: (d) => {
+            return d ? d.toISOString().split('T')[0] : '';
+        },
         stringToColor: (str) => {
-            if (!str) return '#ccc';
-            let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
+            if (!str) return '#94a3b8';
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const h = Math.abs(hash) % 360;
+            return `hsl(${h}, 70%, 45%)`;
         },
         cleanData: (data) => {
+            if (Array.isArray(data)) return data;
             if (!data) return [];
             const cols = Object.keys(data);
             if (!cols.length) return [];
@@ -272,6 +749,7 @@
 
     // --- INIT ---
     grist.ready({ columns: MAPPING, requiredAccess: 'full' });
+
     grist.onRecords(data => {
         state.allRecords = Utils.cleanData(data);
         extractUniqueValues();
@@ -283,7 +761,8 @@
         state.uniqueTeams = [...new Set(state.allRecords.map(r => r.Team).filter(Boolean))].sort();
         state.uniqueProjects = [...new Set(state.allRecords.map(r => r.Project).filter(Boolean))].sort();
         state.uniqueAssignees = [...new Set(state.allRecords.map(r => r.Assignee).filter(Boolean))].sort();
-        // Populate Datalists immediately for dropdowns to work
+        
+        // Populate lists directly to ensure dropdowns work on load
         populateDatalists();
     }
 
@@ -303,31 +782,38 @@
         state.filters.team = document.getElementById('filter-team').value;
         state.filters.project = document.getElementById('filter-project').value;
         state.filters.assignee = document.getElementById('filter-assignee').value;
+
         state.filteredRecords = state.allRecords.filter(r => {
             return (state.filters.team === 'all' || r.Team === state.filters.team) &&
                    (state.filters.project === 'all' || r.Project === state.filters.project) &&
                    (state.filters.assignee === 'all' || r.Assignee === state.filters.assignee);
         });
+
         renderCurrentView();
     }
 
     function switchView(view) {
         state.currentView = view;
-        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.nav-item[onclick="window.switchView('${view}')"]`).classList.add('active');
         
         const tb = document.getElementById('main-toolbar');
         const gs = document.getElementById('gantt-scale');
         
-        if (view === 'dashboard') tb.style.display = 'none';
-        else {
+        if (view === 'dashboard') {
+            tb.style.display = 'none';
+        } else {
             tb.style.display = 'grid';
             gs.style.display = (view === 'gantt') ? 'block' : 'none';
         }
+
         renderCurrentView();
     }
-    
-    function changeGanttScale(val) { state.ganttScale = val; renderCurrentView(); }
+
+    function changeGanttScale(val) {
+        state.ganttScale = val;
+        renderCurrentView();
+    }
 
     function renderCurrentView() {
         const container = document.getElementById('app-content');
@@ -338,6 +824,7 @@
         if(state.currentView === 'dashboard') renderDashboard(wrapper);
         else if(state.currentView === 'gantt') renderGantt(wrapper);
         else renderList(wrapper);
+
         container.appendChild(wrapper);
     }
 
@@ -356,15 +843,34 @@
 
         container.innerHTML = `
             <div class="dashboard-grid">
-                <div class="stat-card"><div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:var(--black)">${total}</div></div><div class="stat-footer">Global</div></div>
-                <div class="stat-card"><div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--info)">${inProgress}</div></div><div class="stat-footer">Actives</div></div>
-                <div class="stat-card"><div><div class="stat-title">Terminées</div><div class="stat-value text-success">${done}</div></div><div class="stat-footer">${donePct}% du total</div></div>
-                <div class="stat-card"><div><div class="stat-title">En Retard</div><div class="stat-value text-danger">${late}</div></div><div class="stat-footer">Attention</div></div>
+                <div class="stat-card">
+                    <div><div class="stat-title">Total Tâches</div><div class="stat-value" style="color:#000">${total}</div></div>
+                    <div class="stat-footer">Global</div>
+                </div>
+                <div class="stat-card">
+                    <div><div class="stat-title">En Cours</div><div class="stat-value" style="color:var(--info)">${inProgress}</div></div>
+                    <div class="stat-footer">Actives</div>
+                </div>
+                <div class="stat-card">
+                    <div><div class="stat-title">Terminées</div><div class="stat-value text-success">${done}</div></div>
+                    <div class="stat-footer">${donePct}% du total</div>
+                </div>
+                <div class="stat-card">
+                    <div><div class="stat-title">En Retard</div><div class="stat-value text-danger">${late}</div></div>
+                    <div class="stat-footer">Attention</div>
+                </div>
             </div>
             <div class="charts-row">
-                <div class="chart-box"><h4 style="margin-top:0">Par Priorité</h4>${renderBarChart(data, 'Priority', {High: 'var(--danger)', Normal: 'var(--warning)', Low: 'var(--success)'})}</div>
-                <div class="chart-box"><h4 style="margin-top:0">Par Administration</h4>${renderBarChart(data, 'Team', null)}</div>
-            </div>`;
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Priorité</h4>
+                    ${renderBarChart(data, 'Priority', {High: 'var(--danger)', Normal: 'var(--warning)', Low: 'var(--success)'})}
+                </div>
+                <div class="chart-box">
+                    <h4 style="margin-top:0">Par Administration</h4>
+                    ${renderBarChart(data, 'Team', null)}
+                </div>
+            </div>
+        `;
     }
 
     function renderBarChart(data, key, colorMap) {
@@ -374,33 +880,44 @@
         return Object.keys(counts).map(k => {
             const pct = (counts[k] / max) * 100;
             const color = colorMap ? (colorMap[k] || '#ccc') : Utils.stringToColor(k);
-            return `<div class="bar-group"><div class="bar-label"><span>${k}</span> <span>${counts[k]}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div></div>`;
+            return `
+                <div class="bar-group">
+                    <div class="bar-label"><span>${k}</span> <span>${count}</span></div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${color}"></div></div>
+                </div>`;
         }).join('');
     }
 
-    // --- GANTT ---
+    // --- GANTT (CORRECTIFS: TRAIT ROUGE & PERF) ---
     function renderGantt(container) {
-        const tasks = state.filteredRecords.filter(r => r.StartDate && r.EndDate)
+        const tasks = state.filteredRecords
+            .filter(r => r.StartDate && r.EndDate)
             .map(r => ({...r, start: Utils.fromGristDate(r.StartDate), end: Utils.fromGristDate(r.EndDate)}))
-            .filter(r => r.start && r.end).sort((a,b) => a.start - b.start);
+            .filter(r => r.start && r.end) 
+            .sort((a,b) => a.start - b.start);
 
-        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche avec dates.</div>'; return; }
+        if (!tasks.length) { container.innerHTML = '<div style="text-align:center; padding:40px; color:#999">Aucune tâche planifiée.</div>'; return; }
 
         let minTime = Math.min(...tasks.map(t => t.start.getTime()));
         let maxTime = Math.max(...tasks.map(t => t.end.getTime()));
         
-        // Safety: Limit range if bad dates (e.g. 1970)
+        // Safety check dates
         const nowMs = new Date().getTime();
         if (minTime < nowMs - (5*365*24*3600*1000)) minTime = nowMs - (30*24*3600*1000); 
 
-        const padding = 86400000 * 2; minTime -= padding; maxTime += padding;
+        const padding = 86400000 * 2; 
+        minTime -= padding; 
+        maxTime += padding;
         const totalDays = Math.ceil((maxTime - minTime) / 86400000);
-        if (totalDays > 2000) { container.innerHTML = '<div style="text-align:center;color:red">Plage de dates trop large.</div>'; return; }
+        
+        if (totalDays > 3000) { container.innerHTML = '<div style="text-align:center;color:red">Plage de dates trop large (> 3000 jours).</div>'; return; }
 
         let pxPerDay = 40;
         if (state.ganttScale === 'week') pxPerDay = 15;
         if (state.ganttScale === 'month') pxPerDay = 5;
+
         const totalWidth = totalDays * pxPerDay;
+        const projects = [...new Set(tasks.map(t => t.Project || 'Sans Projet'))].sort();
 
         // Header
         let headerHtml = '';
@@ -411,6 +928,7 @@
             const m = loopDate.toLocaleDateString('fr-FR', {month:'short'});
             let style = `position:absolute; left:${i*pxPerDay}px; width:${pxPerDay}px; height:100%; border-right:1px solid #f1f5f9; text-align:center; font-size:10px; padding-top:4px;`;
             let txt = '';
+
             if (state.ganttScale === 'day') {
                 txt = `<b>${d}</b><br><span style="color:#aaa">${['D','L','M','M','J','V','S'][w]}</span>`;
                 if(w===0 || w===6) style += 'background:#fafafa';
@@ -430,31 +948,32 @@
             redLine = `<div class="today-line" style="left:${diffNow*pxPerDay}px"><div class="today-label">Auj.</div></div>`;
         }
 
-        // Body Grouped
-        const projects = [...new Set(tasks.map(t => t.Project || 'Sans Projet'))].sort();
+        // Body
         let bodyHtml = redLine;
-
         projects.forEach(proj => {
             bodyHtml += `<div class="gantt-group-header">${proj}</div>`;
             const groupTasks = tasks.filter(t => (t.Project || 'Sans Projet') === proj);
+            
             groupTasks.forEach(t => {
                 let diffStart = (t.start.getTime() - minTime) / 86400000;
                 let dur = (t.end.getTime() - t.start.getTime()) / 86400000 + 1;
+                
                 if(diffStart < 0) { dur += diffStart; diffStart = 0; }
                 const col = Utils.stringToColor(t.Project);
+                
                 if (dur > 0) {
                     bodyHtml += `
-                    <div class="gantt-row">
-                        <div class="gantt-row-label" onclick="window.openModal(${t.id})" title="${t.Title}">${t.Title}</div>
-                        <div class="gantt-row-track" id="track-${t.id}">
-                            <div class="gantt-block" id="block-${t.id}"
-                                 style="left:${diffStart*pxPerDay}px; width:${Math.max(dur*pxPerDay, 5)}px; background:${col}" 
-                                 title="${t.Title}"
-                                 onmousedown="window.handleDragStart(event, ${t.id}, ${minTime}, ${pxPerDay})">
-                                 ${t.Title}
+                        <div class="gantt-row">
+                            <div class="gantt-row-label" onclick="window.openModal(${t.id})" title="${t.Title}">${t.Title}</div>
+                            <div class="gantt-row-track" id="track-${t.id}">
+                                <div class="gantt-block" id="block-${t.id}"
+                                     style="left:${diffStart*pxPerDay}px; width:${Math.max(dur*pxPerDay, 5)}px; background:${col}" 
+                                     title="${t.Title}"
+                                     onmousedown="window.handleDragStart(event, ${t.id}, ${minTime}, ${pxPerDay})">
+                                     ${t.Title}
+                                </div>
                             </div>
-                        </div>
-                    </div>`;
+                        </div>`;
                 }
             });
         });
@@ -486,14 +1005,25 @@
     function handleDragStart(e, id, minTime, pxPerDay) {
         e.preventDefault(); e.stopPropagation();
         const block = document.getElementById(`block-${id}`);
-        dragState = { isDragging: true, element: block, recordId: id, startX: e.clientX, initialLeft: parseFloat(block.style.left), pxPerDay, minTime, hasMoved: false };
+        dragState = { 
+            isDragging: true, 
+            element: block, 
+            recordId: id, 
+            startX: e.clientX, 
+            initialLeft: parseFloat(block.style.left), 
+            pxPerDay: pxPerDay, 
+            minTime: minTime, 
+            hasMoved: false 
+        };
     }
+
     function handleDragMove(e) {
         if (!dragState.isDragging) return;
         dragState.hasMoved = true;
         const delta = e.clientX - dragState.startX;
         dragState.element.style.left = (dragState.initialLeft + delta) + 'px';
     }
+
     async function handleDragEnd(e) {
         if (!dragState.isDragging) return;
         if (dragState.hasMoved) {
@@ -503,11 +1033,16 @@
                 const s = Utils.fromGristDate(r.StartDate); s.setDate(s.getDate() + days);
                 const end = Utils.fromGristDate(r.EndDate); end.setDate(end.getDate() + days);
                 try {
-                    // CORRECTIF SAVE : Array needed
-                    await grist.selectedTable.update([{ id: dragState.recordId, fields: { StartDate: Utils.toGristDate(s), EndDate: Utils.toGristDate(end) } }]);
+                    // Save Fix: Use Array
+                    await grist.selectedTable.update([{ 
+                        id: dragState.recordId, 
+                        fields: { StartDate: Utils.toGristDate(s), EndDate: Utils.toGristDate(end) } 
+                    }]);
                 } catch(err) { console.error(err); renderCurrentView(); }
             } else renderCurrentView();
-        } else { window.openModal(dragState.recordId); }
+        } else {
+            window.openModal(dragState.recordId);
+        }
         dragState.isDragging = false;
         dragState.element = null;
     }
@@ -543,22 +1078,27 @@
         container.appendChild(listDiv);
     }
 
-    // --- MODAL & SAVING (CORRECTIFS CRITIQUES) ---
+    // --- MODAL ---
     function populateDatalists() {
-        const fill = (id, list) => { document.getElementById(id).innerHTML = list.map(v => `<option value="${v}">`).join(''); };
+        // CORRECTIF: Utilisation de listes uniques mises à jour
+        const fill = (id, list) => { 
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = list.map(v => `<option value="${v}">`).join(''); 
+        };
         fill('list-teams', state.uniqueTeams);
         fill('list-projects', state.uniqueProjects);
         fill('list-assignees', state.uniqueAssignees);
     }
     
     function addItem(id) {
-        const val = prompt("Ajouter :");
+        const val = prompt("Ajouter une valeur :");
         if(val) document.getElementById(id).value = val;
     }
 
     function openModal(recordId = null) {
-        // CORRECTIF: Populate à chaque ouverture
+        // Populate à l'ouverture pour être sûr d'avoir les dernières données
         populateDatalists();
+        
         const modal = document.getElementById('modal');
         document.getElementById('input-id').value = '';
         document.getElementById('input-title').value = '';
@@ -569,6 +1109,7 @@
         document.getElementById('input-start').value = Utils.inputDate(new Date());
         document.getElementById('input-end').value = Utils.inputDate(new Date());
         document.getElementById('input-progress').value = 0;
+        document.getElementById('range-progress').value = 0;
 
         if (recordId) {
             const r = state.allRecords.find(x => x.id === recordId);
@@ -582,14 +1123,18 @@
                 document.getElementById('input-start').value = Utils.inputDate(Utils.fromGristDate(r.StartDate));
                 document.getElementById('input-end').value = Utils.inputDate(Utils.fromGristDate(r.EndDate));
                 document.getElementById('input-progress').value = r.Progress || 0;
+                document.getElementById('range-progress').value = r.Progress || 0;
             }
+        } else {
+             if (state.filters.team !== 'all') document.getElementById('input-team').value = state.filters.team;
+             if (state.filters.project !== 'all') document.getElementById('input-project').value = state.filters.project;
         }
         modal.classList.add('open');
     }
 
     function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
-    // CORRECTIF SAVE : API ARRAY STRUCTURE
+    // CORRECTIF CRITIQUE: SAVE
     async function saveTask() {
         const id = document.getElementById('input-id').value;
         const fields = {
@@ -605,20 +1150,24 @@
 
         try {
             if (id) {
-                // UPDATE requires array of objects with id
+                // IMPORTANT: update takes Array of objects
                 await grist.selectedTable.update([{ id: parseInt(id), fields: fields }]);
             } else {
-                // CREATE requires array of objects
+                // IMPORTANT: create takes Array of objects
                 await grist.selectedTable.create([{ fields: fields }]);
             }
             closeModal();
-        } catch (e) {
-            console.error("Save Error:", e);
-            alert("Erreur: Vérifiez que les colonnes Grist existent (Title, Project, etc).");
+        } catch (e) { 
+            console.error(e); 
+            alert("Erreur: Impossible d'enregistrer. Vérifiez que les colonnes 'Title', 'Project', etc. existent dans Grist."); 
         }
     }
 
-    // EXPORTS
+    document.getElementById('input-progress').addEventListener('input', function() {
+        document.getElementById('range-progress').value = this.value;
+    });
+
+    // EXPORTS GLOBAUX
     window.handleFilters = handleFilters;
     window.switchView = switchView;
     window.changeGanttScale = changeGanttScale;
